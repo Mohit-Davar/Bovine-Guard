@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Animal": {
+      "collection": "animals",
+      "fields": {
+        "id": { "type": "string", "description": "Cow identification ID like COW-027" },
+        "rfidTag": { "type": "string", "description": "Electronic RFID ear tag ID" },
+        "breed": { "type": "string", "description": "Breed e.g. HF Crossbred" },
+        "parity": { "type": "number", "description": "Lactation cycle number" },
+        "currentRisk": { "type": "string", "description": "low, watch, high, critical" },
+        "currentRiskScore": { "type": "number", "description": "Composite risk percentage" },
+        "scc": { "type": "number", "description": "Somatic Cell Count per ml" },
+        "ec": { "type": "number", "description": "Electrical conductivity in mS/cm" },
+        "barnId": { "type": "string", "description": "Assigned housing barn e.g. Barn A" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      }
+    },
+    "Screening": {
+      "collection": "screenings",
+      "fields": {
+        "id": { "type": "string" },
+        "animalId": { "type": "string" },
+        "scc": { "type": "number" },
+        "ec": { "type": "number" },
+        "ph": { "type": "number" },
+        "timestamp": { "type": "string" }
+      }
+    },
+    "Alert": {
+      "collection": "alerts",
+      "fields": {
+        "id": { "type": "string" },
+        "animalId": { "type": "string" },
+        "severity": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}
