@@ -1,38 +1,27 @@
-import React, { useState } from 'react';
-import { useHerd } from '../context/HerdContext';
-import { TabType, SupportedLanguage } from '../types';
-import { SUPPORTED_LANGUAGES } from '../i18n/translations';
-import { 
-  Activity, 
-  AlertTriangle, 
-  CheckSquare, 
-  Users, 
-  History, 
-  TrendingUp, 
-  CloudSun, 
-  Languages,
-  ChevronDown
-} from 'lucide-react';
+import React, { useState } from 'react'
+
+import { useHerd } from '../context/HerdContext'
+import { SUPPORTED_LANGUAGES } from '../i18n/translations'
+import { SupportedLanguage, TabType } from '../types'
+import { Activity, CheckSquare, ChevronDown, History, Users } from 'lucide-react'
 
 export const Navbar: React.FC = () => {
-  const { 
-    activeTab, 
-    setActiveTab, 
-    animals, 
-    alerts, 
-    language,
-    setLanguage,
-    t
-  } = useHerd();
+  const { activeTab, setActiveTab, animals, alerts, language, setLanguage, t } = useHerd()
 
-  const [isLangOpen, setIsLangOpen] = useState<boolean>(false);
+  const [isLangOpen, setIsLangOpen] = useState<boolean>(false)
 
-  const highRiskCount = animals.filter(a => a.currentRisk === 'critical' || a.currentRisk === 'high').length;
-  const unreadAlertsCount = alerts.filter(a => !a.acknowledged).length;
+  const highRiskCount = animals.filter((a) => a.currentRisk === 'risked').length
 
-  const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
+  const currentLangInfo =
+    SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0]
 
-  const navItems: { id: TabType; labelKey: string; icon: React.ReactNode; badge?: number; badgeColor?: string }[] = [
+  const navItems: {
+    id: TabType
+    labelKey: string
+    icon: React.ReactNode
+    badge?: number
+    badgeColor?: string
+  }[] = [
     {
       id: 'dashboard',
       labelKey: 'tabDashboard',
@@ -55,35 +44,17 @@ export const Navbar: React.FC = () => {
       labelKey: 'tabScreenings',
       icon: <History className="w-4 h-4" />,
     },
-    {
-      id: 'trends',
-      labelKey: 'tabTrends',
-      icon: <TrendingUp className="w-4 h-4" />,
-    },
-    {
-      id: 'alerts',
-      labelKey: 'tabAlerts',
-      icon: <AlertTriangle className="w-4 h-4" />,
-      badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
-      badgeColor: 'bg-amber-500 text-slate-950 font-bold',
-    },
-    {
-      id: 'environment',
-      labelKey: 'tabEnvironment',
-      icon: <CloudSun className="w-4 h-4" />,
-    },
-  ];
+  ]
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
       {/* Top Header Row */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
-          
           {/* Brand & Farm Title */}
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black shadow-xs shrink-0">
-              <span className="text-base sm:text-lg font-black tracking-tight">HH</span>
+              <span className="text-base sm:text-lg font-black tracking-tight">BG</span>
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -99,7 +70,6 @@ export const Navbar: React.FC = () => {
 
           {/* Controls: Language Selector + Hub Status + Sync Button */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            
             {/* Indian & Multi-Language Selector Dropdown */}
             <div className="relative">
               <button
@@ -115,20 +85,17 @@ export const Navbar: React.FC = () => {
 
               {isLangOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsLangOpen(false)} 
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />
                   <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-1 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                      Select Language
+                      {t('selectLanguage')}
                     </div>
                     {SUPPORTED_LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
                         onClick={() => {
-                          setLanguage(lang.code);
-                          setIsLangOpen(false);
+                          setLanguage(lang.code)
+                          setIsLangOpen(false)
                         }}
                         className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition-colors ${
                           language === lang.code
@@ -149,9 +116,7 @@ export const Navbar: React.FC = () => {
                 </>
               )}
             </div>
-
           </div>
-
         </div>
       </div>
 
@@ -159,7 +124,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-100 overflow-x-auto no-scrollbar">
         <nav className="flex space-x-1 py-1.5">
           {navItems.map((item) => {
-            const isActive = activeTab === item.id;
+            const isActive = activeTab === item.id
 
             return (
               <button
@@ -174,15 +139,17 @@ export const Navbar: React.FC = () => {
                 {item.icon}
                 <span>{t(item.labelKey)}</span>
                 {item.badge !== undefined && (
-                  <span className={`inline-flex items-center justify-center min-w-4.5 h-4 px-1.5 text-[10px] rounded-full font-bold leading-none ${item.badgeColor || 'bg-slate-200 text-slate-800'}`}>
+                  <span
+                    className={`inline-flex items-center justify-center min-w-4.5 h-4 px-1.5 text-[10px] rounded-full font-bold leading-none ${item.badgeColor || 'bg-slate-200 text-slate-800'}`}
+                  >
                     {item.badge}
                   </span>
                 )}
               </button>
-            );
+            )
           })}
         </nav>
       </div>
     </header>
-  );
-};
+  )
+}

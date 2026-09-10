@@ -1,33 +1,35 @@
-import React from 'react';
-import { 
-  CheckCircle2, 
-  Inbox, 
-  Search, 
-  ShieldCheck, 
-  AlertCircle, 
-  ClipboardList, 
-  Calendar, 
-  CloudSun,
-  Plus
-} from 'lucide-react';
+import React from 'react'
 
-export type EmptyStateIcon = 'inbox' | 'search' | 'shield' | 'check' | 'clipboard' | 'calendar' | 'weather';
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  CloudSun,
+  Inbox,
+  Plus,
+  Search,
+  ShieldCheck,
+} from 'lucide-react'
+
+export type EmptyStateIcon =
+  'inbox' | 'search' | 'shield' | 'check' | 'clipboard' | 'calendar' | 'weather'
 
 interface ActionButton {
-  label: string;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
-  icon?: React.ReactNode;
+  label: string
+  onClick: () => void
+  variant?: 'primary' | 'secondary' | 'outline'
+  icon?: React.ReactNode
 }
 
 interface EmptyStateProps {
-  icon?: EmptyStateIcon;
-  title: string;
-  description: string;
-  badgeText?: string;
-  primaryAction?: ActionButton;
-  secondaryAction?: ActionButton;
-  className?: string;
+  icon?: EmptyStateIcon
+  title: string
+  description: string
+  badgeText?: string
+  primaryAction?: ActionButton
+  secondaryAction?: ActionButton
+  className?: string
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -46,46 +48,46 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
             <ShieldCheck className="w-7 h-7" />
           </div>
-        );
+        )
       case 'check':
         return (
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
             <CheckCircle2 className="w-7 h-7" />
           </div>
-        );
+        )
       case 'search':
         return (
           <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
             <Search className="w-7 h-7" />
           </div>
-        );
+        )
       case 'clipboard':
         return (
           <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
             <ClipboardList className="w-7 h-7" />
           </div>
-        );
+        )
       case 'calendar':
         return (
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
             <Calendar className="w-7 h-7" />
           </div>
-        );
+        )
       case 'weather':
         return (
           <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
             <CloudSun className="w-7 h-7" />
           </div>
-        );
+        )
       case 'inbox':
       default:
         return (
           <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shadow-xs">
             <Inbox className="w-7 h-7" />
           </div>
-        );
+        )
     }
-  };
+  }
 
   return (
     <div
@@ -126,5 +128,5 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}

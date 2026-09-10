@@ -1,44 +1,33 @@
-import React, { useState } from 'react';
-import { useHerd } from '../context/HerdContext';
-import { OutcomeType } from '../types';
-import { 
-  X, 
-  Stethoscope, 
-  CheckCircle2, 
-  AlertTriangle, 
-  ShieldAlert, 
-  HelpCircle 
-} from 'lucide-react';
+import React, { useState } from 'react'
+
+import { useHerd } from '../context/HerdContext'
+import { OutcomeType } from '../types'
+import { AlertTriangle, CheckCircle2, HelpCircle, ShieldAlert, Stethoscope, X } from 'lucide-react'
 
 export const VeterinaryOutcomeModal: React.FC = () => {
-  const { 
-    outcomeAnimalId, 
-    closeOutcomeModal, 
-    animals, 
-    recordOutcome 
-  } = useHerd();
+  const { outcomeAnimalId, closeOutcomeModal, animals, recordOutcome } = useHerd()
 
-  const [outcome, setOutcome] = useState<OutcomeType>('confirmed_mastitis');
-  const [mastitisType, setMastitisType] = useState<'clinical' | 'subclinical'>('clinical');
-  const [affectedQuarters, setAffectedQuarters] = useState<Array<'FL' | 'FR' | 'RL' | 'RR'>>(['RL']);
-  const [milkWithholdDays, setMilkWithholdDays] = useState<number>(3);
-  const [treatment, setTreatment] = useState<string>('Intramammary Cefa-Lak (Cephapirin Sodium)');
-  const [notes, setNotes] = useState<string>('');
-  const [vetName, setVetName] = useState<string>('Dr. Sarah Henderson, DVM');
+  const [outcome, setOutcome] = useState<OutcomeType>('confirmed_mastitis')
+  const [mastitisType, setMastitisType] = useState<'clinical' | 'subclinical'>('clinical')
+  const [affectedQuarters, setAffectedQuarters] = useState<Array<'FL' | 'FR' | 'RL' | 'RR'>>(['RL'])
+  const [milkWithholdDays, setMilkWithholdDays] = useState<number>(3)
+  const [treatment, setTreatment] = useState<string>('Intramammary Cefa-Lak (Cephapirin Sodium)')
+  const [notes, setNotes] = useState<string>('')
+  const [vetName, setVetName] = useState<string>('Dr. Sarah Henderson, DVM')
 
-  if (!outcomeAnimalId) return null;
+  if (!outcomeAnimalId) return null
 
-  const cow = animals.find((a) => a.id === outcomeAnimalId);
-  if (!cow) return null;
+  const cow = animals.find((a) => a.id === outcomeAnimalId)
+  if (!cow) return null
 
   const toggleQuarter = (q: 'FL' | 'FR' | 'RL' | 'RR') => {
     setAffectedQuarters((prev) =>
-      prev.includes(q) ? prev.filter((item) => item !== q) : [...prev, q]
-    );
-  };
+      prev.includes(q) ? prev.filter((item) => item !== q) : [...prev, q],
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     recordOutcome({
       animalId: cow.id,
       animalTag: cow.tag,
@@ -47,15 +36,18 @@ export const VeterinaryOutcomeModal: React.FC = () => {
       affectedQuarters: outcome === 'confirmed_mastitis' ? affectedQuarters : undefined,
       milkWithholdDays: outcome === 'confirmed_mastitis' ? milkWithholdDays : 0,
       treatmentAdministered: outcome === 'confirmed_mastitis' ? treatment : undefined,
-      notes: notes || (outcome === 'confirmed_mastitis' ? 'Clinical symptoms matched inline EC conductivity spike.' : 'Cow inspected and cleared.'),
+      notes:
+        notes ||
+        (outcome === 'confirmed_mastitis'
+          ? 'Clinical symptoms matched inline EC conductivity spike.'
+          : 'Cow inspected and cleared.'),
       recordedBy: vetName,
-    });
-  };
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-xl w-full my-8 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-3">
@@ -67,7 +59,8 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                 Log Veterinary Clinical Outcome
               </h2>
               <p className="text-xs text-slate-500">
-                Cow: <span className="font-bold text-slate-800">{cow.name}</span> ({cow.tag}) · Pen {cow.assignedPen}
+                Cow: <span className="font-bold text-slate-800">{cow.name}</span> ({cow.tag}) · Pen{' '}
+                {cow.assignedPen}
               </p>
             </div>
           </div>
@@ -82,7 +75,6 @@ export const VeterinaryOutcomeModal: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          
           {/* Outcome Radio Options */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -90,10 +82,26 @@ export const VeterinaryOutcomeModal: React.FC = () => {
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: 'confirmed_mastitis', label: 'Confirmed Mastitis', icon: <AlertTriangle className="w-4 h-4 text-red-600" /> },
-                { id: 'not_mastitis', label: 'Not Mastitis (Cleared)', icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" /> },
-                { id: 'other_disease', label: 'Other Disease / Ketosis', icon: <ShieldAlert className="w-4 h-4 text-amber-600" /> },
-                { id: 'inconclusive', label: 'Inconclusive / Retest', icon: <HelpCircle className="w-4 h-4 text-slate-600" /> },
+                {
+                  id: 'confirmed_mastitis',
+                  label: 'Confirmed Mastitis',
+                  icon: <AlertTriangle className="w-4 h-4 text-red-600" />,
+                },
+                {
+                  id: 'not_mastitis',
+                  label: 'Not Mastitis (Cleared)',
+                  icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
+                },
+                {
+                  id: 'other_disease',
+                  label: 'Other Disease / Ketosis',
+                  icon: <ShieldAlert className="w-4 h-4 text-amber-600" />,
+                },
+                {
+                  id: 'inconclusive',
+                  label: 'Inconclusive / Retest',
+                  icon: <HelpCircle className="w-4 h-4 text-slate-600" />,
+                },
               ].map((opt) => (
                 <button
                   type="button"
@@ -115,7 +123,6 @@ export const VeterinaryOutcomeModal: React.FC = () => {
           {/* Conditional Mastitis Details */}
           {outcome === 'confirmed_mastitis' && (
             <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-              
               {/* Type */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -241,10 +248,8 @@ export const VeterinaryOutcomeModal: React.FC = () => {
               Save Clinical Record
             </button>
           </div>
-
         </form>
-
       </div>
     </div>
-  );
-};
+  )
+}

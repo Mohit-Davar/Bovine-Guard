@@ -1,14 +1,15 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Spinner } from './Spinner';
-import { Activity, Sparkles, Cpu } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import React from 'react'
+
+import { cn } from '../../lib/utils'
+import { Spinner } from './Spinner'
+import { motion } from 'framer-motion'
+import { Activity, Cpu, Sparkles } from 'lucide-react'
 
 interface LoadingStateProps {
-  title?: string;
-  message?: string;
-  variant?: 'card' | 'screen' | 'inline' | 'table';
-  rows?: number;
+  title?: string
+  message?: string
+  variant?: 'card' | 'screen' | 'inline' | 'table'
+  rows?: number
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
@@ -23,7 +24,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         <Spinner size="sm" variant="ring" />
         <span>{title}</span>
       </div>
-    );
+    )
   }
 
   if (variant === 'table') {
@@ -32,17 +33,25 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <Spinner size="sm" variant="radar" />
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{title}</span>
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              {title}
+            </span>
           </div>
-          <span className="text-[11px] text-slate-500 font-mono">Receiving telemetry stream...</span>
+          <span className="text-[11px] text-slate-500 font-mono">
+            Receiving telemetry stream...
+          </span>
         </div>
         <div className="p-4 space-y-3">
           {Array.from({ length: rows }).map((_, idx) => (
-            <motion.div 
-              key={idx} 
+            <motion.div
+              key={idx}
               initial={{ opacity: 0.5 }}
               animate={{ opacity: [0.4, 0.8, 0.4] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: idx * 0.15 }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: idx * 0.15,
+              }}
               className="flex items-center gap-4"
             >
               <div className="h-9 w-9 rounded-xl bg-slate-200 shrink-0" />
@@ -56,7 +65,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -66,7 +75,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
       transition={{ duration: 0.3 }}
       className={cn(
         'w-full flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-2xl bg-white border border-slate-200 shadow-xs',
-        variant === 'screen' ? 'min-h-[380px]' : 'min-h-[220px]'
+        variant === 'screen' ? 'min-h-[380px]' : 'min-h-[220px]',
       )}
     >
       <div className="relative mb-5">
@@ -95,5 +104,5 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         <span>Portable Scanner & Wearable Telemetry</span>
       </div>
     </motion.div>
-  );
-};
+  )
+}

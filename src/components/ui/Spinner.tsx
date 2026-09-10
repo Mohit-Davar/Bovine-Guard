@@ -1,12 +1,13 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { cn } from '../../lib/utils';
+import React from 'react'
+
+import { cn } from '../../lib/utils'
+import { motion } from 'framer-motion'
 
 interface SpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'ring' | 'radar' | 'pulse' | 'dots';
-  className?: string;
-  label?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  variant?: 'ring' | 'radar' | 'pulse' | 'dots'
+  className?: string
+  label?: string
 }
 
 export const Spinner: React.FC<SpinnerProps> = ({
@@ -20,7 +21,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
     md: 'w-6 h-6',
     lg: 'w-8 h-8',
     xl: 'w-12 h-12',
-  };
+  }
 
   if (variant === 'radar') {
     return (
@@ -32,13 +33,18 @@ export const Spinner: React.FC<SpinnerProps> = ({
         />
         <motion.div
           animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
-          transition={{ duration: 1.6, delay: 0.4, repeat: Infinity, ease: 'easeOut' }}
+          transition={{
+            duration: 1.6,
+            delay: 0.4,
+            repeat: Infinity,
+            ease: 'easeOut',
+          }}
           className="absolute inset-0 rounded-full bg-blue-400"
         />
         <div className="w-2.5 h-2.5 rounded-full bg-blue-600 z-10 shadow-xs" />
         {label && <span className="sr-only">{label}</span>}
       </div>
-    );
+    )
   }
 
   if (variant === 'pulse') {
@@ -51,7 +57,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
         />
         {label && <span className="text-xs font-semibold text-slate-700">{label}</span>}
       </div>
-    );
+    )
   }
 
   if (variant === 'dots') {
@@ -61,13 +67,18 @@ export const Spinner: React.FC<SpinnerProps> = ({
           <motion.span
             key={i}
             animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+            transition={{
+              duration: 0.8,
+              repeat: Infinity,
+              delay: i * 0.15,
+              ease: 'easeInOut',
+            }}
             className="w-2 h-2 rounded-full bg-blue-600"
           />
         ))}
         {label && <span className="text-xs font-semibold text-slate-700 ml-1.5">{label}</span>}
       </div>
-    );
+    )
   }
 
   // Default: SVG Smooth Dual-Ring Spinner
@@ -81,13 +92,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <circle
-          className="opacity-20 stroke-current"
-          cx="12"
-          cy="12"
-          r="10"
-          strokeWidth="3"
-        />
+        <circle className="opacity-20 stroke-current" cx="12" cy="12" r="10" strokeWidth="3" />
         <path
           className="opacity-90 stroke-current"
           d="M12 2a10 10 0 0 1 10 10"
@@ -97,5 +102,5 @@ export const Spinner: React.FC<SpinnerProps> = ({
       </motion.svg>
       {label && <span className="text-xs font-medium text-slate-600">{label}</span>}
     </div>
-  );
-};
+  )
+}

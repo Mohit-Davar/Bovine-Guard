@@ -1,8 +1,0 @@
-{
-  "name": "HerdHealth AI Dashboard",
-  "description": "A farmer-friendly interface to track mastitis risks, manage daily tasks, and monitor herd health at a glance.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}

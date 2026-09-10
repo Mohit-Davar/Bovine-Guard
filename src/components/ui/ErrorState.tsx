@@ -1,23 +1,24 @@
-import React from 'react';
-import { AlertTriangle, RefreshCw, WifiOff, ShieldAlert, LifeBuoy } from 'lucide-react';
+import React from 'react'
+
+import { AlertTriangle, LifeBuoy, RefreshCw, ShieldAlert, WifiOff } from 'lucide-react'
 
 interface ActionButton {
-  label: string;
-  onClick: () => void;
-  loading?: boolean;
-  icon?: React.ReactNode;
+  label: string
+  onClick: () => void
+  loading?: boolean
+  icon?: React.ReactNode
 }
 
 interface ErrorStateProps {
-  title?: string;
-  message?: string;
-  errorCode?: string;
-  onRetry?: () => void;
-  retryLabel?: string;
-  isRetrying?: boolean;
-  secondaryAction?: ActionButton;
-  className?: string;
-  compact?: boolean;
+  title?: string
+  message?: string
+  errorCode?: string
+  onRetry?: () => void
+  retryLabel?: string
+  isRetrying?: boolean
+  secondaryAction?: ActionButton
+  className?: string
+  compact?: boolean
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
@@ -33,7 +34,9 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   if (compact) {
     return (
-      <div className={`p-4 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between gap-3 text-left ${className}`}>
+      <div
+        className={`p-4 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between gap-3 text-left ${className}`}
+      >
         <div className="flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
           <div>
@@ -52,7 +55,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
           </button>
         )}
       </div>
-    );
+    )
   }
 
   return (
@@ -96,8 +99,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 
       <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-400">
         <LifeBuoy className="w-3.5 h-3.5" />
-        <span>Local parlor hub offline buffer is active. All offline operations remain preserved.</span>
+        <span>
+          Local parlor hub offline buffer is active. All offline operations remain preserved.
+        </span>
       </div>
     </div>
-  );
-};
+  )
+}
