@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
+import { INDIAN_HERD_ANIMALS, INDIAN_SCREENING_RECORDS } from '../data/indianDairyData'
 import { getTranslation } from '../i18n/translations'
 import {
   COLLECTIONS,
@@ -44,8 +45,8 @@ interface HerdContextType {
   // Navigation & Viewport
   activeTab: TabType
   setActiveTab: (tab: TabType) => void
-  hmiMode: boolean
-  toggleHmiMode: () => void
+  touchMode: boolean
+  toggleTouchMode: () => void
 
   // Domain Data
   animals: Animal[]
@@ -80,11 +81,15 @@ interface HerdContextType {
   closeOutcomeModal: () => void
   recordOutcome: (outcome: Omit<VeterinaryOutcome, 'id' | 'timestamp'>) => void
 
+  appointmentCow: Animal | null
+  openAppointmentModal: (cow: Animal) => void
+  closeAppointmentModal: () => void
+
   isSyncModalOpen: boolean
   setSyncModalOpen: (open: boolean) => void
 
-  isRfidModalOpen: boolean
-  setRfidModalOpen: (open: boolean) => void
+  isQuickCheckModalOpen: boolean
+  setQuickCheckModalOpen: (open: boolean) => void
 
   // Alerts & Notifications
   acknowledgeAlert: (id: string) => void
@@ -93,8 +98,8 @@ interface HerdContextType {
   addToast: (toast: Omit<Toast, 'id'>) => void
   dismissToast: (id: string) => void
 
-  // RFID Simulator
-  simulateRfidScan: (animalId: string, customScc?: number, customEc?: number) => void
+  // Quick Check Simulator
+  recordQuickCheck: (animalId: string, customEc?: number) => void
   toggleOfflineMode: () => void
 }
 
@@ -105,7 +110,7 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const t = (key: string) => getTranslation(key, language)
 
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
-  const [hmiMode, setHmiMode] = useState<boolean>(false)
+  const [touchMode, setTouchMode] = useState<boolean>(false)
 
   // Core Data
   const [animals, setAnimals] = useState<Animal[]>([])
@@ -164,8 +169,12 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Modals
   const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null)
   const [outcomeAnimalId, setOutcomeAnimalId] = useState<string | null>(null)
+  const [appointmentCow, setAppointmentCow] = useState<Animal | null>(null)
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false)
-  const [isRfidModalOpen, setRfidModalOpen] = useState<boolean>(false)
+  const [isQuickCheckModalOpen, setQuickCheckModalOpen] = useState<boolean>(false)
+
+  const openAppointmentModal = (cow: Animal) => setAppointmentCow(cow)
+  const closeAppointmentModal = () => setAppointmentCow(null)
 
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -182,7 +191,7 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }
 
-  const toggleHmiMode = () => setHmiMode((prev) => !prev)
+  const toggleTouchMode = () => setTouchMode((prev) => !prev)
 
   // Firestore Realtime Subscription and Data Fetching
   useEffect(() => {
@@ -203,8 +212,11 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
           getBarnsFromDb(),
         ])
 
-        setAnimals(dbAnimals)
-        setScreenings(dbScreenings)
+        const initialHerd = dbAnimals.length > 0 ? dbAnimals : INDIAN_HERD_ANIMALS
+        const initialScreenings = dbScreenings.length > 0 ? dbScreenings : INDIAN_SCREENING_RECORDS
+
+        setAnimals(initialHerd)
+        setScreenings(initialScreenings)
         setAlerts(dbAlerts)
         setVetOutcomes(dbOutcomes)
         setBarnZones(dbBarns)
@@ -298,20 +310,18 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
         environment: false,
       })
       setTabError({
-        dashboard: 'Connection to parlor telemetry gateway timed out (ERR_GATEWAY_TIMEOUT)',
-        actions:
-          'Unable to synchronize action dispatch queue with herd management server (ERR_DISPATCH_FAIL)',
-        animals:
-          'Failed to fetch animal registry records from central dairy database (ERR_DB_UNAVAILABLE)',
-        screenings: 'Screening history log partition unavailable (ERR_SCREENING_SYNC)',
-        trends: 'Telemetry aggregation pipeline returned HTTP 503 Service Unavailable',
-        alerts: 'Real-time alert streaming bus disconnected (ERR_ALERT_STREAM)',
-        environment: 'Barn weather station telemetry unreachable (ERR_SENSOR_OFFLINE)',
+        dashboard: 'Unable to load farm dashboard. Please check network connection.',
+        actions: 'Unable to synchronize action items. Please refresh.',
+        animals: 'Failed to fetch cow records. Please check connection.',
+        screenings: 'Screening history log temporarily unavailable.',
+        trends: 'Farm trends data temporarily unavailable.',
+        alerts: 'Farm notifications currently offline.',
+        environment: 'Barn environmental readings temporarily unreachable.',
       })
       setSyncStatus((prev) => ({
         ...prev,
         syncError:
-          'Cloud synchronization failed: network connection to central farm cluster timed out.',
+          'Data synchronization temporarily unavailable. Retrying automatically...',
       }))
     } else if (mode === 'empty') {
       setIsGlobalLoading(false)
@@ -501,8 +511,11 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getBarnsFromDb(),
     ])
 
-    setAnimals(dbAnimals)
-    setScreenings(dbScreenings)
+    const initialHerd = dbAnimals.length > 0 ? dbAnimals : INDIAN_HERD_ANIMALS
+    const initialScreenings = dbScreenings.length > 0 ? dbScreenings : INDIAN_SCREENING_RECORDS
+
+    setAnimals(initialHerd)
+    setScreenings(initialScreenings)
     setAlerts(dbAlerts)
     setVetOutcomes(dbOutcomes)
     setBarnZones(dbBarns)
@@ -535,7 +548,6 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...a,
           currentRisk: 'low' as RiskLevel,
           riskScore: 10,
-          scc: 80,
           ec: 4.8,
           recommendedAction: 'Routine management.',
         })),
@@ -651,27 +663,26 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
       title: !syncStatus.isOnline ? 'Online Connection Restored' : 'Offline Hub Mode Active',
       message: !syncStatus.isOnline
         ? 'Connected to cloud. Records will synchronize.'
-        : 'Running on local parlor buffer.',
+        : 'Running in local offline mode.',
       type: !syncStatus.isOnline ? 'success' : 'warning',
     })
   }
 
-  const simulateRfidScan = (animalId: string, customScc?: number, customEc?: number) => {
+  const recordQuickCheck = (animalId: string, customEc?: number) => {
     const cow = animals.find((a) => a.id === animalId) || animals[0]
     if (!cow) return
-    const scc = customScc ?? Math.floor(Math.random() * 400 + 80)
     const ec = customEc ?? parseFloat((Math.random() * 2.5 + 4.6).toFixed(1))
-    const ph = parseFloat((6.5 + (scc > 250 ? 0.4 : 0.05)).toFixed(2))
+    const ph = parseFloat((6.5 + (ec > 6.0 ? 0.35 : 0.05)).toFixed(2))
 
     let risk: RiskLevel = 'low'
     let riskScore = 15
-    if (scc > 400 || ec > 6.2) {
+    if (ec > 6.8) {
       risk = 'critical'
       riskScore = 91
-    } else if (scc > 250 || ec > 5.8) {
+    } else if (ec > 5.8) {
       risk = 'high'
       riskScore = 76
-    } else if (scc > 180 || ec > 5.5) {
+    } else if (ec > 5.4) {
       risk = 'watch'
       riskScore = 52
     }
@@ -682,16 +693,15 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
       animalId: cow.id,
       animalTag: cow.tag,
       animalName: cow.name,
-      scc,
       ec,
       ph,
-      milkTemp: parseFloat((38.5 + (scc > 250 ? 0.9 : 0.2)).toFixed(1)),
+      milkTemp: parseFloat((38.5 + (ec > 6.0 ? 0.6 : 0.1)).toFixed(1)),
       riskScore,
       riskLevel: risk,
-      parlorStation: 'Portable Scanner Round',
+      penLocation: cow.assignedPen,
       automatedFlag: risk === 'high' || risk === 'critical',
       notes:
-        risk === 'critical' ? 'Elevated risk - veterinary examination recommended.' : undefined,
+        risk === 'critical' ? 'Elevated conductivity - observation recommended.' : undefined,
     }
 
     setScreenings((prev) => [newRecord, ...prev])
@@ -705,7 +715,6 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (a.id === cow.id) {
           const updatedCow: Animal = {
             ...a,
-            scc,
             ec,
             ph,
             currentRisk: risk,
@@ -726,26 +735,26 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: `alt-${Date.now()}`,
         timestamp: 'Just now',
         severity: risk === 'critical' ? 'critical' : 'warning',
-        title: `${risk.toUpperCase()} Risk Detected: ${cow.name} (${cow.tag})`,
-        message: `Portable scanner test recorded SCC ${scc}k cells/ml and EC ${ec} mS/cm. Action recommended.`,
+        title: `Observation Needed: Cow ${cow.tag} (${cow.name})`,
+        message: `Milk test recorded electrical conductivity ${ec} mS/cm. Action recommended.`,
         animalId: cow.id,
         animalTag: cow.tag,
         acknowledged: false,
-        recommendedAction: 'Withhold milk and perform paddle California Mastitis Test.',
+        recommendedAction: 'Inspect udder and review wearable activity trend.',
       }
       setAlerts((prev) => [newAlert, ...prev])
       saveAlertToDb(newAlert).catch((e) => console.warn('Error saving alert in Firestore:', e))
 
       addToast({
-        title: `Scanner Trigger: ${risk.toUpperCase()} Risk`,
-        message: `${cow.name} (#${cow.tag}) flagged for follow-up examination.`,
+        title: `Check Flag: Cow ${cow.tag}`,
+        message: `Cow ${cow.tag} (${cow.name}) flagged for attention.`,
         type: risk === 'critical' ? 'alert' : 'warning',
         animalId: cow.id,
       })
     } else {
       addToast({
-        title: 'Screening Completed',
-        message: `${cow.name} (#${cow.tag}) cleared with low mastitis risk.`,
+        title: 'Check Completed',
+        message: `Cow ${cow.tag} (${cow.name}) parameters normal.`,
         type: 'success',
         animalId: cow.id,
       })
@@ -767,8 +776,8 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
         t,
         activeTab,
         setActiveTab,
-        hmiMode,
-        toggleHmiMode,
+        touchMode,
+        toggleTouchMode,
         animals,
         screenings,
         alerts,
@@ -793,16 +802,19 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openOutcomeModal,
         closeOutcomeModal,
         recordOutcome,
+        appointmentCow,
+        openAppointmentModal,
+        closeAppointmentModal,
         isSyncModalOpen,
         setSyncModalOpen,
-        isRfidModalOpen,
-        setRfidModalOpen,
+        isQuickCheckModalOpen,
+        setQuickCheckModalOpen,
         acknowledgeAlert,
         dismissAlert,
         toasts,
         addToast,
         dismissToast,
-        simulateRfidScan,
+        recordQuickCheck,
         toggleOfflineMode,
       }}
     >

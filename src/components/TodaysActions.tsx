@@ -1,12 +1,19 @@
 import React, { useState } from 'react'
 
 import { useHerd } from '../context/HerdContext'
-import { RiskBadge } from './RiskBadge'
+import { Animal } from '../types'
 import { EmptyState } from './ui/EmptyState'
 import { ErrorState } from './ui/ErrorState'
 import { LoadingState } from './ui/LoadingState'
 import { motion } from 'framer-motion'
-import { Check, CheckCircle2, Radio, RotateCcw, Stethoscope } from 'lucide-react'
+import {
+  Calendar,
+  Check,
+  Clock,
+  Eye,
+  Play,
+  RotateCcw,
+} from 'lucide-react'
 
 export const TodaysActions: React.FC = () => {
   const {
@@ -15,16 +22,15 @@ export const TodaysActions: React.FC = () => {
     tabError,
     isRetryingTab,
     retryTab,
-    openOutcomeModal,
-    setRfidModalOpen,
+    openAnimalProfile,
+    openAppointmentModal,
     resetToSampleData,
     addToast,
     t,
   } = useHerd()
 
-  const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'watch'>('all')
-
-  const [completedIds, setCompletedIds] = useState<string[]>([])
+  const [resolvedIds, setResolvedIds] = useState<string[]>([])
+  const [monitoringStartedIds, setMonitoringStartedIds] = useState<string[]>([])
 
   const isLoading = tabLoading.actions
   const error = tabError.actions
@@ -32,10 +38,10 @@ export const TodaysActions: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="py-12">
         <LoadingState
-          title="Loading Today's Actions..."
-          message="Prioritizing cows needing inspection or separation..."
+          title={t('tabActions')}
+          message={t('thinking')}
           variant="card"
         />
       </div>
@@ -44,15 +50,15 @@ export const TodaysActions: React.FC = () => {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="py-12">
         <ErrorState
-          title="Unable to load action list"
+          title={t('tabActions')}
           message={error}
           onRetry={() => retryTab('actions')}
-          retryLabel={t('actionRetry')}
+          retryLabel={t('reset')}
           isRetrying={isRetrying}
           secondaryAction={{
-            label: t('actionRestoreData'),
+            label: t('reset'),
             onClick: resetToSampleData,
           }}
         />
@@ -60,311 +66,299 @@ export const TodaysActions: React.FC = () => {
     )
   }
 
-  // Only cows requiring action are shown.
-  // Normal/Low risk cows are excluded.
-  const actionAnimals = animals.filter((cow) => {
-    if (completedIds.includes(cow.id)) return false
+  // Flagged cows needing attention: Suspicious or At Risk
+  const flaggedCows = animals.filter(
+    (cow) =>
+      (cow.currentRisk === 'suspected' ||
+        cow.currentRisk === 'watch' ||
+        cow.currentRisk === 'critical' ||
+        cow.currentRisk === 'high' ||
+        cow.ec > 5.8) &&
+      !resolvedIds.includes(cow.id),
+  )
 
-    if (
-      cow.currentRisk !== 'critical' &&
-      cow.currentRisk !== 'high' &&
-      cow.currentRisk !== 'watch' &&
-      cow.currentRisk !== 'suspected' &&
-      cow.currentRisk !== 'risked'
-    ) {
-      return false
-    }
-
-    if (filter === 'all') return true
-
-    return cow.currentRisk === filter
-  })
-
-  const handleMarkResolved = (id: string, name: string) => {
-    setCompletedIds((prev) => [...prev, id])
-
+  const handleStartMonitoring = (cow: Animal) => {
+    setMonitoringStartedIds((prev) => [...prev, cow.id])
     addToast({
-      title: 'Action Completed',
-      message: `${name} marked resolved for this milking shift.`,
+      title: t('startMonitoring'),
+      message: `${cow.name || `Cow ${cow.tag}`} - ${t('wearableActive')}`,
       type: 'success',
+      animalId: cow.id,
     })
   }
 
-  if (animals.length === 0 || (actionAnimals.length === 0 && completedIds.length === 0)) {
-    return (
-      <div className="space-y-6">
-        <EmptyState
-          icon="shield"
-          title={t('allClear')}
-          description={t('allClearDesc')}
-          badgeText="Healthy Milking Shift"
-          primaryAction={{
-            label: t('scanRfid'),
-            onClick: () => setRfidModalOpen(true),
-            icon: <Radio className="w-4 h-4" />,
-          }}
-          secondaryAction={{
-            label: t('actionRestoreData'),
-            onClick: () => {
-              setCompletedIds([])
-              resetToSampleData()
-            },
-            icon: <RotateCcw className="w-4 h-4" />,
-          }}
-        />
-      </div>
-    )
+  const handleResolve = (cow: Animal) => {
+    setResolvedIds((prev) => [...prev, cow.id])
+    addToast({
+      title: t('markResolved'),
+      message: `${cow.name || `Cow ${cow.tag}`} ${t('markResolved').toLowerCase()}.`,
+      type: 'info',
+      animalId: cow.id,
+    })
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header and Quick Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-8 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 bg-white p-6 sm:p-8 rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-              {t('tabActions')}
-            </h2>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+            {t('tabActions')}
+          </h1>
+          <p className="text-xs text-slate-500 font-normal mt-1">
+            {flaggedCows.length > 0
+              ? `${flaggedCows.length} ${t('tabAnimals').toLowerCase()} ${t('actionNeeded').toLowerCase()}`
+              : t('resolvedCount')}
+          </p>
+        </div>
 
-            <span className="text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
-              {actionAnimals.length} {t('needAction')}
+        {resolvedIds.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-normal text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-full">
+              ✓ {resolvedIds.length} {t('resolvedCount')}
             </span>
-          </div>
-
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">{t('actionListDesc')}</p>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {(['all', 'critical', 'high', 'watch'] as const).map((lvl) => (
             <button
-              key={lvl}
-              onClick={() => setFilter(lvl)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
-                filter === lvl
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+              onClick={() => setResolvedIds([])}
+              className="text-xs font-normal text-slate-500 hover:text-slate-900 underline transition-colors"
             >
-              {lvl === 'all'
-                ? t('allFilter')
-                : t(`risk${lvl.charAt(0).toUpperCase() + lvl.slice(1)}`)}
+              {t('reset')}
             </button>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Action Cards */}
-      {actionAnimals.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-          <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-
-          <h3 className="font-bold text-slate-900 text-sm">{t('allResolvedTitle')}</h3>
-
-          <p className="text-xs text-slate-500 mt-1">{t('allResolvedDesc')}</p>
-
-          {completedIds.length > 0 && (
-            <button
-              onClick={() => setCompletedIds([])}
-              className="mt-4 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700"
-            >
-              {t('resetCompleted')}
-            </button>
-          )}
-        </div>
+      {/* When All Clear */}
+      {flaggedCows.length === 0 ? (
+        <EmptyState
+          icon="shield"
+          title={t('resolvedCount')}
+          description={t('normalParams')}
+          primaryAction={{
+            label: t('reset'),
+            onClick: resetToSampleData,
+            icon: <RotateCcw className="w-4 h-4" />,
+          }}
+        />
       ) : (
-        <div className="space-y-3">
-          {actionAnimals.map((cow, idx) => {
-            const isCritical = cow.currentRisk === 'critical'
+        /* Action Cards Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {flaggedCows.map((cow) => {
+            const isSuspicious =
+              cow.currentRisk === 'suspected' ||
+              cow.currentRisk === 'critical' ||
+              cow.riskScore >= 70
+            const statusLabel = isSuspicious ? t('statusSuspicious') : t('statusAtRisk')
+
+            const hasActiveWearable =
+              Boolean(cow.wearable) || monitoringStartedIds.includes(cow.id)
+
+            // Dynamic parameter formatting
+            const ecState =
+              cow.ec >= 7.0
+                ? 'High'
+                : cow.ec >= 6.0
+                  ? 'Elevated'
+                  : cow.ec >= 5.5
+                    ? 'Above normal'
+                    : 'Normal'
+            const phState = cow.ph > 6.7 ? 'Above normal' : 'Normal'
+            const milkTempState = cow.milkTemp > 38.8 ? 'Elevated' : 'Normal'
 
             return (
               <motion.div
                 key={cow.id}
+                layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.2,
-                  delay: idx * 0.04,
-                }}
-                className={`bg-white rounded-xl border-2 shadow-xs overflow-hidden ${
-                  isCritical ? 'border-red-300' : 'border-slate-200'
+                exit={{ opacity: 0, scale: 0.98 }}
+                className={`bg-white rounded-3xl border p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between transition-all duration-200 ${
+                  isSuspicious
+                    ? 'border-rose-200/90 hover:border-rose-300'
+                    : 'border-black/[0.06] hover:border-black/[0.12]'
                 }`}
               >
-                <div className="p-4 sm:p-5">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* LEFT: COW INFORMATION */}
-                    <div className="flex-1 min-w-0">
-                      {/* Cow Header */}
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        {/* Tag */}
-                        <span className="font-mono text-xs sm:text-sm font-black bg-slate-900 text-white px-2.5 py-1 rounded-md">
-                          {cow.tag}
+                <div>
+                  {/* Cow Title, Pen, Breed, Status */}
+                  <div className="flex items-start justify-between pb-4 border-b border-black/[0.04]">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-lg font-semibold text-slate-900 tracking-tight">
+                          {cow.name || `Cow ${cow.tag}`}
                         </span>
-
-                        {/* Name */}
-                        <span className="font-black text-slate-900 text-base">{cow.name}</span>
-
-                        {/* Risk */}
-                        <RiskBadge risk={cow.currentRisk} score={cow.riskScore} size="sm" />
-                      </div>
-
-                      {/* Basic Info */}
-                      <div className="flex items-center gap-x-3 gap-y-1 mt-2 text-xs text-slate-500 font-medium flex-wrap">
-                        <span>
-                          {t('penLabel')}{' '}
-                          <strong className="text-slate-700">{cow.assignedPen}</strong>
-                        </span>
-
-                        <span className="text-slate-300">•</span>
-
-                        <span>
-                          DIM <strong className="text-slate-700">{cow.daysInMilk}</strong>
+                        <span className="text-xs font-normal text-slate-500">
+                          {cow.assignedPen || 'Pen 1'}
                         </span>
                       </div>
+                      <div className="text-xs font-normal text-slate-500 mt-1">
+                        {t('breedLabel')}: <span className="text-slate-800">{cow.breed}</span>
+                      </div>
+                    </div>
 
-                      {/* STAGE 1 & STAGE 2 HEALTH PARAMETERS */}
-                      <div className="mt-3 space-y-2.5">
-                        {/* Stage 1 */}
-                        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
-                          <span className="block text-[10px] font-black uppercase text-blue-700 tracking-wider mb-1.5">
-                            Stage 1: Milk Parameters
+                    <span
+                      className={`text-xs font-medium flex items-center gap-1.5 ${
+                        isSuspicious ? 'text-rose-600' : 'text-amber-700'
+                      }`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          isSuspicious ? 'bg-rose-500' : 'bg-amber-500'
+                        }`}
+                      />
+                      <span>{statusLabel}</span>
+                    </span>
+                  </div>
+
+                  {/* Two Parameter Sections */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
+                    {/* Milk parameters */}
+                    <div className="p-4 rounded-2xl bg-[#FBFBFD] border border-black/[0.04]">
+                      <div className="text-xs font-medium text-slate-800 mb-3 flex items-center justify-between">
+                        <span>{t('milkChecks')}</span>
+                        <span className="text-slate-400 font-normal">Shift Check</span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{t('ecLabel')}:</span>
+                          <span
+                            className={`font-semibold ${
+                              cow.ec >= 7.0
+                                ? 'text-rose-600'
+                                : cow.ec >= 6.0
+                                  ? 'text-amber-600'
+                                  : 'text-slate-800'
+                            }`}
+                          >
+                            {cow.ec} ({ecState})
                           </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{t('phLabel')}:</span>
+                          <span className="font-normal text-slate-800">
+                            {cow.ph} ({phState})
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{t('tempLabel')}:</span>
+                          <span className="font-normal text-slate-800">
+                            {cow.milkTemp}°C ({milkTempState})
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{t('yieldLabel')}:</span>
+                          <span className="font-normal text-slate-800">
+                            {cow.dailyMilkYieldKg} L (
+                            {cow.dailyMilkYieldKg < 6.5 ? '↓ Below normal' : 'Normal'})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {/* Milk Temperature */}
-                            <div className="bg-white rounded-md p-2 border border-slate-200">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                Milk Temp
-                              </p>
-
-                              <p className="text-xs font-bold text-slate-900 mt-0.5">
-                                {cow.milkTemp !== undefined ? `${cow.milkTemp}°C` : 'N/A'}
-                              </p>
-                            </div>
-
-                            {/* pH */}
-                            <div className="bg-white rounded-md p-2 border border-slate-200">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                pH of Milk
-                              </p>
-
-                              <p className="text-xs font-bold text-slate-900 mt-0.5">
-                                {cow.ph !== undefined ? cow.ph : 'N/A'}
-                              </p>
-                            </div>
-
-                            {/* EC */}
-                            <div className="bg-white rounded-md p-2 border border-slate-200">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                EC of Milk
-                              </p>
-
-                              <p
-                                className={`text-xs font-black mt-0.5 ${
-                                  cow.ec > 6.0 ? 'text-red-600' : 'text-slate-900'
-                                }`}
-                              >
-                                {cow.ec !== undefined ? `${cow.ec} mS/cm` : 'N/A'}
-                              </p>
-                            </div>
-
-                            {/* SCC */}
-                            <div className="bg-white rounded-md p-2 border border-slate-200">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                SCC of Milk
-                              </p>
-
-                              <p
-                                className={`text-xs font-black mt-0.5 ${
-                                  cow.scc > 200 ? 'text-red-600' : 'text-slate-900'
-                                }`}
-                              >
-                                {cow.scc !== undefined ? `${cow.scc}k cells/mL` : 'N/A'}
-                              </p>
-                            </div>
-                          </div>
+                    {/* Physical parameters */}
+                    <div className="p-4 rounded-2xl bg-[#FBFBFD] border border-black/[0.04] flex flex-col justify-between">
+                      <div>
+                        <div className="text-xs font-medium text-slate-800 mb-3 flex items-center justify-between">
+                          <span>{t('physicalChecks')}</span>
+                          <span
+                            className={`text-xs font-normal ${
+                              hasActiveWearable
+                                ? 'text-emerald-700'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {hasActiveWearable ? t('activeWearable') : t('pendingStart')}
+                          </span>
                         </div>
 
-                        {/* Stage 2 */}
-                        {(cow.currentRisk === 'suspected' ||
-                          cow.currentRisk === 'risked' ||
-                          cow.currentRisk === 'watch' ||
-                          cow.currentRisk === 'high' ||
-                          cow.currentRisk === 'critical') &&
-                          cow.wearable && (
-                            <div className="bg-purple-50/50 rounded-lg p-2.5 border border-purple-100">
-                              <span className="block text-[10px] font-black uppercase text-purple-700 tracking-wider mb-1.5">
-                                Stage 2: Telemetry Parameters
+                        {hasActiveWearable ? (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">{t('activityLabel')}:</span>
+                              <span
+                                className={`font-medium ${
+                                  cow.wearable?.activityStatus === 'lethargic'
+                                    ? 'text-rose-600'
+                                    : 'text-slate-800'
+                                }`}
+                              >
+                                {cow.wearable?.activityStatus === 'lethargic'
+                                  ? 'Low (↓)'
+                                  : cow.wearable?.activityStatus === 'restless'
+                                    ? 'Restless'
+                                    : 'Normal'}
                               </span>
-
-                              <div className="grid grid-cols-3 gap-2">
-                                {/* Rumination */}
-                                <div className="bg-white rounded-md p-2 border border-slate-200">
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                    Rumination
-                                  </p>
-
-                                  <p className="text-xs font-bold text-slate-900 mt-0.5">
-                                    {cow.wearable.ruminationMinutes !== undefined
-                                      ? `${cow.wearable.ruminationMinutes} min/day`
-                                      : 'N/A'}
-                                  </p>
-                                </div>
-
-                                {/* Activity */}
-                                <div className="bg-white rounded-md p-2 border border-slate-200">
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                    Physical Activity
-                                  </p>
-
-                                  <p className="text-xs font-bold text-slate-900 mt-0.5 capitalize">
-                                    {cow.wearable.activityStatus || 'normal'}
-                                  </p>
-                                </div>
-
-                                {/* Body Temperature */}
-                                <div className="bg-white rounded-md p-2 border border-slate-200">
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                    Body Temperature
-                                  </p>
-
-                                  <p className="text-xs font-bold text-slate-900 mt-0.5">
-                                    {cow.wearable.bodyTemp !== undefined
-                                      ? `${cow.wearable.bodyTemp}°C`
-                                      : 'N/A'}
-                                  </p>
-                                </div>
-                              </div>
                             </div>
-                          )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">{t('movementLabel')}:</span>
+                              <span className="font-normal text-slate-800">
+                                {isSuspicious ? 'Reduced' : 'Normal'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">{t('lyingLabel')}:</span>
+                              <span className="font-normal text-slate-800">
+                                {isSuspicious ? 'Increased (↑)' : 'Normal'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">{t('standingLabel')}:</span>
+                              <span className="font-normal text-slate-800">Normal</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center">
+                            <Clock className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
+                            <div className="text-xs font-medium text-slate-700">{t('pendingStart')}</div>
+                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">
+                              {t('pendingWearable')}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* RIGHT: ACTIONS */}
-                    <div className="lg:w-[210px] shrink-0 lg:border-l lg:border-slate-100 lg:pl-4">
-                      <div className="flex flex-col gap-2">
-                        {/* Veterinary Outcome */}
+                      {!hasActiveWearable && (
                         <button
-                          onClick={() => openOutcomeModal(cow.id)}
-                          className="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 flex items-center justify-center gap-1.5 transition-colors"
+                          type="button"
+                          onClick={() => handleStartMonitoring(cow)}
+                          className="mt-3 w-full py-2 px-3 rounded-full bg-[#1D1D1F] hover:bg-black text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
                         >
-                          <Stethoscope className="w-3.5 h-3.5 text-blue-600" />
-
-                          <span>{t('actionLogOutcome')}</span>
+                          <Play className="w-3 h-3" />
+                          <span>{t('startMonitoring')}</span>
                         </button>
-
-                        {/* Mark Resolved */}
-                        <button
-                          onClick={() => handleMarkResolved(cow.id, cow.name)}
-                          className="w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-
-                          <span>{t('actionDone')}</span>
-                        </button>
-                      </div>
+                      )}
                     </div>
                   </div>
+                </div>
+
+                {/* Card Actions Bottom Bar */}
+                <div className="pt-4 border-t border-black/[0.04] flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openAnimalProfile(cow.id)}
+                      className="px-4 py-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-slate-800 text-xs font-medium transition-colors flex items-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{t('viewCow')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openAppointmentModal(cow)}
+                      className="px-4 py-2 rounded-full bg-[#1D1D1F] hover:bg-black text-white text-xs font-medium transition-all shadow-sm flex items-center gap-1.5 active:scale-98"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                      <span>{t('scheduleVet')}</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleResolve(cow)}
+                    className="px-3.5 py-2 rounded-full text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 text-xs font-medium transition-colors flex items-center gap-1 ml-auto"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{t('markResolved')}</span>
+                  </button>
                 </div>
               </motion.div>
             )

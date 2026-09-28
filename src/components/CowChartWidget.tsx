@@ -1,7 +1,17 @@
 import React, { useState } from 'react'
 
 import { Animal } from '../types'
-import { Activity, TrendingUp, Zap } from 'lucide-react'
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Droplets,
+  Sparkles,
+  Thermometer,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from 'lucide-react'
 import {
   Area,
   AreaChart,
@@ -9,6 +19,10 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -18,389 +32,241 @@ import {
 
 interface Props {
   animal: Animal
-  compact?: boolean
 }
 
-export const CowChartWidget: React.FC<Props> = ({ animal, compact = false }) => {
-  const [activeMetricTab, setActiveMetricTab] = useState<'quarters' | 'trajectory' | 'wearable'>(
-    'quarters',
-  )
+export const CowChartWidget: React.FC<Props> = ({ animal }) => {
+  const [activeMetric, setActiveMetric] = useState<'conductivity' | 'yield' | 'activity' | 'temperature'>('conductivity')
 
-  // Prepare 4-Quarter EC Data
-  const quarterChartData = animal.quarters.map((q) => {
-    const isElevated = q.ec >= 5.8
-    const isSuspect = q.ec >= 5.4 && q.ec < 5.8
-    return {
-      name: q.quarter,
-      fullName:
-        q.quarter === 'FL'
-          ? 'Front-Left'
-          : q.quarter === 'FR'
-            ? 'Front-Right'
-            : q.quarter === 'RL'
-              ? 'Rear-Left'
-              : 'Rear-Right',
-      ec: q.ec,
-      status: q.status,
-      fill: isElevated ? '#dc2626' : isSuspect ? '#d97706' : '#10b981',
-    }
-  })
+  const isSuspicious = animal.currentRisk === 'suspected' || animal.currentRisk === 'critical' || animal.ec > 6.8
+  const isAtRisk = animal.currentRisk === 'watch' || animal.currentRisk === 'high' || (animal.ec > 5.6 && animal.ec <= 6.8)
 
-  // Prepare 7-Day SCC / EC screening trajectory data
-  const trajectoryData =
-    animal.screeningHistory && animal.screeningHistory.length > 0
-      ? animal.screeningHistory.map((item) => ({
-          date: item.date,
-          scc: item.scc,
-          ec: item.ec,
-        }))
-      : [
-          {
-            date: 'D-6',
-            scc: Math.max(60, Math.round(animal.scc * 0.35)),
-            ec: 4.8,
-          },
-          {
-            date: 'D-5',
-            scc: Math.max(65, Math.round(animal.scc * 0.4)),
-            ec: 4.8,
-          },
-          {
-            date: 'D-4',
-            scc: Math.max(75, Math.round(animal.scc * 0.45)),
-            ec: 4.9,
-          },
-          {
-            date: 'D-3',
-            scc: Math.max(90, Math.round(animal.scc * 0.55)),
-            ec: 5.1,
-          },
-          {
-            date: 'D-2',
-            scc: Math.max(120, Math.round(animal.scc * 0.7)),
-            ec: 5.3,
-          },
-          {
-            date: 'Yday',
-            scc: Math.max(160, Math.round(animal.scc * 0.85)),
-            ec: 5.6,
-          },
-          { date: 'Today', scc: animal.scc, ec: animal.ec },
-        ]
+  // 5-Day Trend Data tailored to cow's current measurements
+  const trendData = [
+    {
+      day: '4 days ago',
+      ec: 5.0,
+      yieldL: 8.8,
+      activity: 100,
+      ruminationMin: 480,
+      milkTemp: 38.2,
+      status: 'Healthy',
+    },
+    {
+      day: '3 days ago',
+      ec: 5.1,
+      yieldL: 8.6,
+      activity: 98,
+      ruminationMin: 470,
+      milkTemp: 38.3,
+      status: 'Healthy',
+    },
+    {
+      day: '2 days ago',
+      ec: isSuspicious ? 6.2 : isAtRisk ? 5.5 : 5.1,
+      yieldL: isSuspicious ? 7.6 : isAtRisk ? 8.2 : 8.7,
+      activity: isSuspicious ? 90 : isAtRisk ? 95 : 100,
+      ruminationMin: isSuspicious ? 420 : isAtRisk ? 450 : 485,
+      milkTemp: isSuspicious ? 38.5 : 38.2,
+      status: isSuspicious ? 'Watch' : 'Healthy',
+    },
+    {
+      day: 'Yesterday',
+      ec: isSuspicious ? 6.8 : isAtRisk ? 6.0 : 5.0,
+      yieldL: isSuspicious ? 6.5 : isAtRisk ? 7.5 : 8.6,
+      activity: isSuspicious ? 82 : isAtRisk ? 88 : 99,
+      ruminationMin: isSuspicious ? 380 : isAtRisk ? 420 : 480,
+      milkTemp: isSuspicious ? 38.7 : isAtRisk ? 38.4 : 38.2,
+      status: isSuspicious ? 'At Risk' : isAtRisk ? 'At Risk' : 'Healthy',
+    },
+    {
+      day: 'Today',
+      ec: animal.ec,
+      yieldL: animal.dailyMilkYieldKg,
+      activity: isSuspicious ? 72 : isAtRisk ? 85 : 100,
+      ruminationMin: animal.wearable?.ruminationMinutes ?? (isSuspicious ? 340 : isAtRisk ? 410 : 490),
+      milkTemp: animal.milkTemp,
+      status: isSuspicious ? 'Suspicious' : isAtRisk ? 'At Risk' : 'Healthy',
+    },
+  ]
 
-  const infectedQuarter = animal.quarters.find((q) => q.ec >= 5.8 || q.status === 'infected')
-  const minQuarterEc = Math.min(...animal.quarters.map((q) => q.ec))
-  const maxQuarterEc = Math.max(...animal.quarters.map((q) => q.ec))
-  const deltaEc = maxQuarterEc - minQuarterEc
+  // Observed calculations
+  const ecDelta = Math.round(((animal.ec - 5.0) / 5.0) * 100)
+  const yieldDrop = Math.round(((8.5 - animal.dailyMilkYieldKg) / 8.5) * 100)
 
   return (
-    <div className="bg-slate-50/90 rounded-xl border border-slate-200/80 p-3 sm:p-4 text-slate-800">
-      {/* Widget Header & Sub-selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            Biophysical Analytics · {animal.name} ({animal.tag})
-          </span>
+    <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
+      {/* Header and Apple-style segmented tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+            Historical Parameter Trends
+          </h3>
+          <p className="text-xs text-slate-500 font-normal">
+            Multi-chart view of milk and physical sensor metrics over past 5 shifts
+          </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-200 text-[11px] self-start sm:self-center">
+        {/* Apple Segmented Metric Selector */}
+        <div className="inline-flex items-center p-1 bg-black/[0.04] rounded-xl gap-0.5">
           <button
-            type="button"
-            onClick={() => setActiveMetricTab('quarters')}
-            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-              activeMetricTab === 'quarters'
-                ? 'bg-slate-900 text-white shadow-xs'
+            onClick={() => setActiveMetric('conductivity')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              activeMetric === 'conductivity'
+                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            4-Quarter EC (mS/cm)
+            Conductivity (EC)
           </button>
           <button
-            type="button"
-            onClick={() => setActiveMetricTab('trajectory')}
-            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-              activeMetricTab === 'trajectory'
-                ? 'bg-slate-900 text-white shadow-xs'
+            onClick={() => setActiveMetric('yield')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              activeMetric === 'yield'
+                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            SCC Trajectory
+            Milk Yield
           </button>
-          {(animal.currentRisk === 'suspected' ||
-            animal.currentRisk === 'risked' ||
-            animal.currentRisk === 'watch' ||
-            animal.currentRisk === 'high' ||
-            animal.currentRisk === 'critical') &&
-            animal.wearable && (
-              <button
-                type="button"
-                onClick={() => setActiveMetricTab('wearable')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                  activeMetricTab === 'wearable'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Stage 2 Wearable
-              </button>
-            )}
+          <button
+            onClick={() => setActiveMetric('activity')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              activeMetric === 'activity'
+                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Activity & Rumination
+          </button>
+          <button
+            onClick={() => setActiveMetric('temperature')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              activeMetric === 'temperature'
+                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Milk Temp
+          </button>
         </div>
       </div>
 
-      {/* VIEW 1: 4-Quarter EC Bar Chart Widget */}
-      {activeMetricTab === 'quarters' && (
-        <div className="pt-3 space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-600" />
-              <span className="font-semibold text-slate-700">Quarter Differential:</span>
-              <span
-                className={`font-mono font-bold px-1.5 py-0.5 rounded ${
-                  deltaEc >= 0.8
-                    ? 'bg-red-100 text-red-700'
-                    : deltaEc >= 0.4
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-emerald-100 text-emerald-800'
-                }`}
-              >
-                ΔEC = +{deltaEc.toFixed(1)} mS/cm
-              </span>
-            </div>
+      {/* Chart Canvas */}
+      <div className="h-60 w-full pt-2">
+        <ResponsiveContainer width="100%" height="100%">
+          {activeMetric === 'conductivity' ? (
+            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="cowEcGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={isSuspicious ? '#F43F5E' : '#0071E3'} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={isSuspicious ? '#F43F5E' : '#0071E3'} stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F3" />
+              <XAxis dataKey="day" stroke="#86868B" fontSize={11} tickLine={false} />
+              <YAxis domain={[4.0, 9.0]} stroke="#86868B" fontSize={11} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(29, 29, 31, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                }}
+              />
+              <ReferenceLine y={5.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Baseline (5.5)', position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
+              <Area
+                type="monotone"
+                dataKey="ec"
+                name="Conductivity (mS/cm)"
+                stroke={isSuspicious ? '#F43F5E' : '#0071E3'}
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#cowEcGrad)"
+              />
+            </AreaChart>
+          ) : activeMetric === 'yield' ? (
+            <BarChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F3" />
+              <XAxis dataKey="day" stroke="#86868B" fontSize={11} tickLine={false} />
+              <YAxis domain={[0, 12]} stroke="#86868B" fontSize={11} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(29, 29, 31, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                }}
+              />
+              <ReferenceLine y={8.0} stroke="#86868B" strokeDasharray="4 4" label={{ value: 'Target Yield (8.0 L)', position: 'insideTopLeft', fill: '#86868B', fontSize: 10 }} />
+              <Bar dataKey="yieldL" name="Milk Yield (L)" fill="#10B981" radius={[6, 6, 0, 0]}>
+                {trendData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.yieldL < 6.0 ? '#F43F5E' : entry.yieldL < 7.5 ? '#F59E0B' : '#10B981'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          ) : activeMetric === 'activity' ? (
+            <ComposedChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F3" />
+              <XAxis dataKey="day" stroke="#86868B" fontSize={11} tickLine={false} />
+              <YAxis yAxisId="left" stroke="#86868B" fontSize={11} tickLine={false} domain={[50, 110]} label={{ value: 'Activity %', angle: -90, position: 'insideLeft', fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" stroke="#6366F1" fontSize={11} tickLine={false} domain={[250, 550]} label={{ value: 'Rumination (min)', angle: 90, position: 'insideRight', fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(29, 29, 31, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+              <Bar yAxisId="left" dataKey="activity" name="Physical Activity Index" fill="#0071E3" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="ruminationMin" name="Rumination Minutes" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 4 }} />
+            </ComposedChart>
+          ) : (
+            <LineChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F3" />
+              <XAxis dataKey="day" stroke="#86868B" fontSize={11} tickLine={false} />
+              <YAxis domain={[37.5, 40.0]} stroke="#86868B" fontSize={11} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(29, 29, 31, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                }}
+              />
+              <ReferenceLine y={38.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Temp (38.5°C)', position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
+              <Line type="monotone" dataKey="milkTemp" name="Milk Temperature (°C)" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4 }} />
+            </LineChart>
+          )}
+        </ResponsiveContainer>
+      </div>
 
-            <span className="text-[11px] text-slate-500 font-medium">
-              Threshold: &gt; 5.5 mS/cm
-            </span>
-          </div>
-
-          {/* Recharts Bar Chart */}
-          <div className="h-44 w-full pt-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={quarterChartData}
-                margin={{ top: 15, right: 10, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  domain={[3.5, 7.5]}
-                  tick={{ fontSize: 10, fill: '#64748b' }}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                  tickLine={false}
-                  unit=" mS"
-                />
-                <Tooltip
-                  formatter={(value: any, name: any, item: any) => [
-                    `${value} mS/cm (${item.payload.fullName} - ${item.payload.status.toUpperCase()})`,
-                    'Conductivity',
-                  ]}
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#1e293b',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px',
-                  }}
-                />
-                <ReferenceLine
-                  y={5.5}
-                  stroke="#ef4444"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: 'Mastitis Risk (5.5 mS/cm)',
-                    position: 'top',
-                    fill: '#dc2626',
-                    fontSize: 10,
-                    fontWeight: 700,
-                  }}
-                />
-                <Bar dataKey="ec" radius={[6, 6, 0, 0]}>
-                  {quarterChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 pt-1 text-center">
-            {animal.quarters.map((q) => (
-              <div
-                key={q.quarter}
-                className={`p-1.5 rounded-lg border text-[11px] ${
-                  q.ec >= 5.8
-                    ? 'bg-red-50 border-red-200 text-red-700'
-                    : q.ec >= 5.4
-                      ? 'bg-amber-50 border-amber-200 text-amber-800'
-                      : 'bg-white border-slate-200 text-slate-700'
-                }`}
-              >
-                <span className="font-bold block">{q.quarter}</span>
-                <span className="font-mono font-bold">{q.ec}</span>
-                <span className="text-[9px] text-slate-400 block">mS/cm</span>
-              </div>
-            ))}
-          </div>
+      {/* GauSaathi AI Chart Insight */}
+      <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-500/[0.04] via-indigo-500/[0.04] to-violet-500/[0.04] border border-indigo-500/15 flex items-start gap-2.5">
+        <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+        <div className="text-xs">
+          <span className="font-semibold text-indigo-950">GauSaathi AI Observation: </span>
+          <span className="text-slate-700 leading-relaxed">
+            {isSuspicious
+              ? `Cow ${animal.tag} experienced an acute conductivity divergence of +${ecDelta}% beginning 48 hours ago, concurrent with an activity decrease and rumination drop. Milk yield has decreased ${yieldDrop > 0 ? `${yieldDrop}%` : 'moderately'}. Recommend isolating milk and scheduling vet review.`
+              : isAtRisk
+                ? `Conductivity has nudged mildly above baseline (current ${animal.ec} mS/cm). Collar indicates steady rumination. Keep under active watch during the upcoming milking shift.`
+                : `Parameters are balanced. Conductivity (current ${animal.ec} mS/cm) and rumination remain within expected baseline curves for ${animal.breed} breed.`}
+          </span>
         </div>
-      )}
-
-      {/* VIEW 2: Historical Trajectory Area Chart */}
-      {activeMetricTab === 'trajectory' && (
-        <div className="pt-3 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-600">
-            <span className="font-semibold flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-              Somatic Cell Count (SCC × 1,000 cells/mL)
-            </span>
-            <span className="font-mono text-slate-500">
-              Current:{' '}
-              <strong className={animal.scc > 200 ? 'text-red-600' : 'text-emerald-700'}>
-                {animal.scc}k
-              </strong>
-            </span>
-          </div>
-
-          <div className="h-44 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={trajectoryData}
-                margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorScc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                  unit="k"
-                />
-                <Tooltip
-                  formatter={(val: any) => [`${val},000 cells/mL`, 'Somatic Cells']}
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '11px',
-                  }}
-                />
-                <ReferenceLine
-                  y={200}
-                  stroke="#ef4444"
-                  strokeDasharray="3 3"
-                  label={{
-                    value: '200k Subclinical Threshold',
-                    position: 'insideTopLeft',
-                    fill: '#ef4444',
-                    fontSize: 10,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="scc"
-                  stroke="#2563eb"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#colorScc)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 3: Stage 2 Wearable Behavioral Timeline */}
-      {activeMetricTab === 'wearable' && animal.wearable && (
-        <div className="pt-3 space-y-3">
-          <div className="grid grid-cols-3 gap-2">
-            {/* Rumination */}
-            <div className="p-2.5 bg-white rounded-xl border border-slate-200">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Rumination
-              </span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span
-                  className={`text-base font-bold font-mono ${
-                    animal.wearable.ruminationMinutes < animal.wearable.ruminationBaseline * 0.8
-                      ? 'text-red-600'
-                      : 'text-slate-900'
-                  }`}
-                >
-                  {animal.wearable.ruminationMinutes}
-                </span>
-                <span className="text-[10px] text-slate-400">min/day</span>
-              </div>
-              <span className="text-[10px] text-slate-500 block mt-0.5">
-                Baseline: {animal.wearable.ruminationBaseline}m (
-                <span className="text-red-600 font-bold">
-                  {Math.round(
-                    ((animal.wearable.ruminationMinutes - animal.wearable.ruminationBaseline) /
-                      animal.wearable.ruminationBaseline) *
-                      100,
-                  )}
-                  %
-                </span>
-                )
-              </span>
-            </div>
-
-            {/* Body Temp */}
-            <div className="p-2.5 bg-white rounded-xl border border-slate-200">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Body Temp
-              </span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span
-                  className={`text-base font-bold font-mono ${
-                    animal.wearable.bodyTemp > 39.2 ? 'text-red-600' : 'text-slate-900'
-                  }`}
-                >
-                  {animal.wearable.bodyTemp}°C
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Normal: 38.5–39.3°C</span>
-            </div>
-
-            {/* Activity */}
-            <div className="p-2.5 bg-white rounded-xl border border-slate-200">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Locomotion
-              </span>
-              <div className="mt-0.5">
-                <span
-                  className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${
-                    animal.wearable.activityStatus === 'lethargic'
-                      ? 'bg-red-100 text-red-700'
-                      : animal.wearable.activityStatus === 'restless'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-emerald-100 text-emerald-800'
-                  }`}
-                >
-                  {animal.wearable.activityStatus}
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-1">
-                Battery: {animal.wearable.batteryPercent}%
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -9,22 +9,15 @@ export const VeterinaryOutcomeModal: React.FC = () => {
 
   const [outcome, setOutcome] = useState<OutcomeType>('confirmed_mastitis')
   const [mastitisType, setMastitisType] = useState<'clinical' | 'subclinical'>('clinical')
-  const [affectedQuarters, setAffectedQuarters] = useState<Array<'FL' | 'FR' | 'RL' | 'RR'>>(['RL'])
   const [milkWithholdDays, setMilkWithholdDays] = useState<number>(3)
-  const [treatment, setTreatment] = useState<string>('Intramammary Cefa-Lak (Cephapirin Sodium)')
+  const [treatment, setTreatment] = useState<string>('Intramammary treatment & supportive anti-inflammatory')
   const [notes, setNotes] = useState<string>('')
-  const [vetName, setVetName] = useState<string>('Dr. Sarah Henderson, DVM')
+  const [vetName, setVetName] = useState<string>('Dr. Rajesh Verma')
 
   if (!outcomeAnimalId) return null
 
   const cow = animals.find((a) => a.id === outcomeAnimalId)
   if (!cow) return null
-
-  const toggleQuarter = (q: 'FL' | 'FR' | 'RL' | 'RR') => {
-    setAffectedQuarters((prev) =>
-      prev.includes(q) ? prev.filter((item) => item !== q) : [...prev, q],
-    )
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,14 +26,13 @@ export const VeterinaryOutcomeModal: React.FC = () => {
       animalTag: cow.tag,
       outcome,
       mastitisType: outcome === 'confirmed_mastitis' ? mastitisType : undefined,
-      affectedQuarters: outcome === 'confirmed_mastitis' ? affectedQuarters : undefined,
       milkWithholdDays: outcome === 'confirmed_mastitis' ? milkWithholdDays : 0,
       treatmentAdministered: outcome === 'confirmed_mastitis' ? treatment : undefined,
       notes:
         notes ||
         (outcome === 'confirmed_mastitis'
-          ? 'Clinical symptoms matched inline EC conductivity spike.'
-          : 'Cow inspected and cleared.'),
+          ? 'Clinical symptoms confirmed. Milk withheld.'
+          : 'Cow inspected and cleared by veterinarian.'),
       recordedBy: vetName,
     })
   }
@@ -59,8 +51,7 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                 Log Veterinary Clinical Outcome
               </h2>
               <p className="text-xs text-slate-500">
-                Cow: <span className="font-bold text-slate-800">{cow.name}</span> ({cow.tag}) · Pen{' '}
-                {cow.assignedPen}
+                Cow: <span className="font-bold text-slate-800">{cow.name || `Cow ${cow.tag}`}</span> ({cow.assignedPen} · {cow.breed})
               </p>
             </div>
           </div>
@@ -75,7 +66,7 @@ export const VeterinaryOutcomeModal: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {/* Outcome Radio Options */}
+          {/* Assessment Options */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
               Clinical Assessment
@@ -94,7 +85,7 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                 },
                 {
                   id: 'other_disease',
-                  label: 'Other Disease / Ketosis',
+                  label: 'Other Health Issue',
                   icon: <ShieldAlert className="w-4 h-4 text-amber-600" />,
                 },
                 {
@@ -120,13 +111,12 @@ export const VeterinaryOutcomeModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Conditional Mastitis Details */}
+          {/* Details */}
           {outcome === 'confirmed_mastitis' && (
             <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-              {/* Type */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Mastitis Classification
+                  Severity Classification
                 </label>
                 <div className="flex items-center gap-4 text-xs font-semibold">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -137,7 +127,7 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                       onChange={() => setMastitisType('clinical')}
                       className="text-blue-600"
                     />
-                    <span>Clinical (Visible clots / udder swelling)</span>
+                    <span>Clinical (Visible swelling or milk clots)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -147,31 +137,8 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                       onChange={() => setMastitisType('subclinical')}
                       className="text-blue-600"
                     />
-                    <span>Subclinical (High SCC / EC only)</span>
+                    <span>Subclinical (High conductivity only)</span>
                   </label>
-                </div>
-              </div>
-
-              {/* Affected Quarters Toggle */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Affected Quarters
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(['FL', 'FR', 'RL', 'RR'] as const).map((q) => (
-                    <button
-                      type="button"
-                      key={q}
-                      onClick={() => toggleQuarter(q)}
-                      className={`py-2 rounded-lg text-xs font-black border transition-all ${
-                        affectedQuarters.includes(q)
-                          ? 'bg-red-600 text-white border-red-700 shadow-2xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {q}
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -186,35 +153,35 @@ export const VeterinaryOutcomeModal: React.FC = () => {
                   max="14"
                   value={milkWithholdDays}
                   onChange={(e) => setMilkWithholdDays(parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 />
               </div>
 
               {/* Treatment */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Treatment / Pharmaceutical Administered
+                  Treatment Administered
                 </label>
                 <input
                   type="text"
                   value={treatment}
                   onChange={(e) => setTreatment(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 />
               </div>
             </div>
           )}
 
-          {/* Veterinarian / Technician */}
+          {/* Veterinarian */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Examining Veterinarian / Technician
+              Examining Veterinarian / Doctor
             </label>
             <input
               type="text"
               value={vetName}
               onChange={(e) => setVetName(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -227,8 +194,8 @@ export const VeterinaryOutcomeModal: React.FC = () => {
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. CMT score 3 in Front-Right quarter. Teat score normal. Antibiotic therapy initiated."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="e.g. Udder inspection completed. Milk withheld and treatment started."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
           </div>
 
@@ -245,7 +212,7 @@ export const VeterinaryOutcomeModal: React.FC = () => {
               type="submit"
               className="px-5 py-2 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
             >
-              Save Clinical Record
+              Save Record
             </button>
           </div>
         </form>
