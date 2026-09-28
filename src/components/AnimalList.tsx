@@ -107,7 +107,7 @@ export const AnimalList: React.FC = () => {
               {t('tabAnimals')}
             </h1>
             <p className="text-xs text-slate-500 font-normal mt-1">
-              {filteredAnimals.length} of {animals.length} {t('allStock').toLowerCase()}
+              {t('animalCountLabel', { shown: filteredAnimals.length, total: animals.length })}
             </p>
           </div>
 
@@ -115,22 +115,20 @@ export const AnimalList: React.FC = () => {
           <div className="inline-flex items-center p-1 bg-black/[0.04] rounded-2xl gap-1 w-fit">
             <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
-                viewMode === 'cards'
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${viewMode === 'cards'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span>{t('cards')}</span>
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
-                viewMode === 'table'
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${viewMode === 'table'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <List className="w-3.5 h-3.5" />
               <span>{t('table')}</span>
@@ -234,13 +232,12 @@ export const AnimalList: React.FC = () => {
               <div
                 key={cow.id}
                 onClick={() => openAnimalProfile(cow.id)}
-                className={`bg-white rounded-3xl border p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between cursor-pointer hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-black/[0.12] transition-all duration-200 ${
-                  rawStatus === 'Suspicious'
+                className={`bg-white rounded-3xl border p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between cursor-pointer hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-black/[0.12] transition-all duration-200 ${rawStatus === 'Suspicious'
                     ? 'border-rose-200/90'
                     : rawStatus === 'At Risk'
                       ? 'border-amber-200/90'
                       : 'border-black/[0.06]'
-                }`}
+                  }`}
               >
                 <div>
                   {/* Basic Information */}
@@ -248,7 +245,7 @@ export const AnimalList: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-base font-semibold text-slate-900 tracking-tight">
-                          {cow.name || `Cow ${cow.tag}`}
+                          {cow.name || `${t('cowLabel')} ${cow.tag}`}
                         </span>
                         <span className="text-xs font-normal text-slate-500">
                           {cow.assignedPen || 'Pen 1'}
@@ -260,22 +257,20 @@ export const AnimalList: React.FC = () => {
                     </div>
 
                     <span
-                      className={`text-xs font-medium flex items-center gap-1.5 ${
-                        rawStatus === 'Suspicious'
+                      className={`text-xs font-medium flex items-center gap-1.5 ${rawStatus === 'Suspicious'
                           ? 'text-rose-600'
                           : rawStatus === 'At Risk'
                             ? 'text-amber-700'
                             : 'text-emerald-700'
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`w-2 h-2 rounded-full ${
-                          rawStatus === 'Suspicious'
+                        className={`w-2 h-2 rounded-full ${rawStatus === 'Suspicious'
                             ? 'bg-rose-500'
                             : rawStatus === 'At Risk'
                               ? 'bg-amber-500'
                               : 'bg-emerald-500'
-                        }`}
+                          }`}
                       />
                       <span>{statusLabel}</span>
                     </span>
@@ -290,7 +285,7 @@ export const AnimalList: React.FC = () => {
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500">EC:</span>
+                          <span className="text-slate-500">{t('ecLabel')}:</span>
                           <span
                             className={`font-semibold ${cow.ec >= 7.0 ? 'text-rose-600' : 'text-slate-800'}`}
                           >
@@ -298,15 +293,15 @@ export const AnimalList: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500">pH:</span>
+                          <span className="text-slate-500">{t('phLabel')}:</span>
                           <span className="font-normal text-slate-800">{cow.ph}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500">Temp:</span>
+                          <span className="text-slate-500">{t('tempLabel')}:</span>
                           <span className="font-normal text-slate-800">{cow.milkTemp}°C</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500">Yield:</span>
+                          <span className="text-slate-500">{t('yieldLabel')}:</span>
                           <span className="font-normal text-slate-800">
                             {cow.dailyMilkYieldKg} L
                           </span>
@@ -323,26 +318,26 @@ export const AnimalList: React.FC = () => {
                         {hasWearable ? (
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Activity:</span>
+                              <span className="text-slate-500">{t('activityLabel')}:</span>
                               <span className="font-normal text-slate-800">
-                                {rawStatus === 'Suspicious' ? 'Low' : 'Normal'}
+                                {rawStatus === 'Suspicious' ? t('low') : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Movement:</span>
+                              <span className="text-slate-500">{t('movementLabel')}:</span>
                               <span className="font-normal text-slate-800">
-                                {rawStatus === 'Suspicious' ? 'Reduced' : 'Normal'}
+                                {rawStatus === 'Suspicious' ? t('reduced') : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Lying:</span>
+                              <span className="text-slate-500">{t('lyingLabel')}:</span>
                               <span className="font-normal text-slate-800">
-                                {rawStatus === 'Suspicious' ? 'High' : 'Normal'}
+                                {rawStatus === 'Suspicious' ? t('elevated') : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Standing:</span>
-                              <span className="font-normal text-slate-800">Normal</span>
+                              <span className="text-slate-500">{t('standingLabel')}:</span>
+                              <span className="font-normal text-slate-800">{t('normalValue')}</span>
                             </div>
                           </div>
                         ) : (
@@ -413,28 +408,26 @@ export const AnimalList: React.FC = () => {
                       className="hover:bg-[#FBFBFD] cursor-pointer transition-colors"
                     >
                       <td className="py-3 px-5 font-semibold text-slate-900">
-                        {cow.name || `Cow ${cow.tag}`}
+                        {cow.name || `${t('cowLabel')} ${cow.tag}`}
                       </td>
                       <td className="py-3 px-4 text-slate-600">{cow.assignedPen || 'Pen 1'}</td>
                       <td className="py-3 px-4 text-slate-600">{cow.breed}</td>
                       <td className="py-3 px-4">
                         <span
-                          className={`font-medium flex items-center gap-1.5 ${
-                            rawStatus === 'Suspicious'
+                          className={`font-medium flex items-center gap-1.5 ${rawStatus === 'Suspicious'
                               ? 'text-rose-600'
                               : rawStatus === 'At Risk'
                                 ? 'text-amber-700'
                                 : 'text-emerald-700'
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              rawStatus === 'Suspicious'
+                            className={`w-1.5 h-1.5 rounded-full ${rawStatus === 'Suspicious'
                                 ? 'bg-rose-500'
                                 : rawStatus === 'At Risk'
                                   ? 'bg-amber-500'
                                   : 'bg-emerald-500'
-                            }`}
+                              }`}
                           />
                           <span>{statusLabel}</span>
                         </span>

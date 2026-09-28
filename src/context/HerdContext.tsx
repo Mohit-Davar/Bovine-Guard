@@ -40,7 +40,7 @@ interface HerdContextType {
   // Localization
   language: SupportedLanguage
   setLanguage: (lang: SupportedLanguage) => void
-  t: (key: string) => string
+  t: (key: string, values?: Record<string, string | number>) => string
 
   // Navigation & Viewport
   activeTab: TabType
@@ -107,7 +107,8 @@ const HerdContext = createContext<HerdContextType | undefined>(undefined)
 
 export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<SupportedLanguage>('en')
-  const t = (key: string) => getTranslation(key, language)
+  const t = (key: string, values?: Record<string, string | number>) =>
+    getTranslation(key, language, values)
 
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [touchMode, setTouchMode] = useState<boolean>(false)

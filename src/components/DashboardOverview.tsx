@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { useHerd } from '../context/HerdContext'
 import {
@@ -26,6 +26,7 @@ import {
   Sparkles,
   Thermometer,
   Wind,
+  Loader2,
 } from 'lucide-react'
 import {
   Area,
@@ -53,9 +54,65 @@ export const DashboardOverview: React.FC = () => {
     setActiveTab,
     openAppointmentModal,
     t,
+    language,
   } = useHerd()
 
   const [activeChartTab, setActiveChartTab] = useState<'pens' | 'breeds' | 'climate' | 'yieldCorr'>('pens')
+
+  const [dashboardAiInsight, setDashboardAiInsight] = useState<string | null>(null)
+  const [isInsightLoading, setIsInsightLoading] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchInsight = async () => {
+      setIsInsightLoading(true)
+      try {
+        let topic = ''
+        if (activeChartTab === 'pens') topic = 'pen health and suspicious cows'
+        else if (activeChartTab === 'breeds') topic = 'breed health summary'
+        else if (activeChartTab === 'climate') topic = 'farm microclimate (temperature, humidity, THI)'
+        else if (activeChartTab === 'yieldCorr') topic = 'milk yield vs conductivity correlation'
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `Provide a very brief 1-2 sentence GauSaathi Farm Health Note regarding ${topic} based on the overall farm data. Speak like a helpful AI farm assistant to a farmer. Give practical advice.\n\nIMPORTANT: You must respond in the following language: ${language}.`,
+            language,
+            history: [],
+            animals: animals.map((animal) => ({
+              name: animal.name,
+              tag: animal.tag,
+              breed: animal.breed,
+              pen: animal.assignedPen,
+              risk: animal.currentRisk,
+              riskScore: animal.riskScore,
+              ec: animal.ec,
+              ph: animal.ph,
+              milkTemp: animal.milkTemp,
+              dailyMilkYieldKg: animal.dailyMilkYieldKg,
+              wearableActivity: animal.wearable?.activityStatus ?? 'not monitored',
+            })),
+          }),
+        })
+        const result = (await response.json()) as { reply?: unknown }
+        if (response.ok && typeof result.reply === 'string' && isMounted) {
+          setDashboardAiInsight(result.reply.trim())
+        }
+      } catch (e) {
+        // Fallback or ignore
+      } finally {
+        if (isMounted) setIsInsightLoading(false)
+      }
+    }
+    
+    fetchInsight()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeChartTab, language, animals])
 
   const isLoading = tabLoading.dashboard
   const error = tabError.dashboard
@@ -354,11 +411,10 @@ export const DashboardOverview: React.FC = () => {
             return (
               <div
                 key={pen.name}
-                className={`bg-white rounded-3xl p-5 sm:p-6 border transition-all duration-200 ${
-                  hasSuspicious
+                className={`bg-white rounded-3xl p-5 sm:p-6 border transition-all duration-200 ${hasSuspicious
                     ? 'border-rose-200 shadow-[0_2px_14px_rgba(244,63,94,0.06)] hover:border-rose-300'
                     : 'border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:border-black/[0.12]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between pb-3.5 border-b border-black/[0.04]">
                   <div className="font-semibold text-base text-slate-900 tracking-tight">
@@ -408,13 +464,12 @@ export const DashboardOverview: React.FC = () => {
 
                 <div className="mt-5 pt-3.5 border-t border-black/[0.04] flex items-center justify-between">
                   <span
-                    className={`text-xs font-medium ${
-                      hasSuspicious
+                    className={`text-xs font-medium ${hasSuspicious
                         ? 'text-rose-600'
                         : pen.atRisk > 0
                           ? 'text-amber-700'
                           : 'text-emerald-700'
-                    }`}
+                      }`}
                   >
                     {hasSuspicious
                       ? `${pen.suspicious} ${t('statusSuspicious')}`
@@ -453,41 +508,37 @@ export const DashboardOverview: React.FC = () => {
           <div className="inline-flex items-center p-1 bg-black/[0.04] rounded-2xl gap-1 w-fit">
             <button
               onClick={() => setActiveChartTab('pens')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${
-                activeChartTab === 'pens'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${activeChartTab === 'pens'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               {t('tabPenHealth')}
             </button>
             <button
               onClick={() => setActiveChartTab('breeds')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${
-                activeChartTab === 'breeds'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${activeChartTab === 'breeds'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               {t('tabBreedSummary')}
             </button>
             <button
               onClick={() => setActiveChartTab('climate')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${
-                activeChartTab === 'climate'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${activeChartTab === 'climate'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               {t('tabMicroclimate')}
             </button>
             <button
               onClick={() => setActiveChartTab('yieldCorr')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${
-                activeChartTab === 'yieldCorr'
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all ${activeChartTab === 'yieldCorr'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               {t('tabYieldCorr')}
             </button>
@@ -530,8 +581,12 @@ export const DashboardOverview: React.FC = () => {
                   <div className="text-xs font-semibold text-slate-900">
                     {t('aiInsightTitle')}
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal">
-                    {t('penAiInsight')}
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal min-h-[30px]">
+                    {isInsightLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> {t('thinking')}</span>
+                    ) : (
+                      dashboardAiInsight || t('penAiInsight')
+                    )}
                   </p>
                 </div>
               </div>
@@ -579,8 +634,12 @@ export const DashboardOverview: React.FC = () => {
                   <div className="text-xs font-semibold text-slate-900">
                     {t('aiInsightTitle')}
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal">
-                    {t('breedAiInsight')}
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal min-h-[30px]">
+                    {isInsightLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> {t('thinking')}</span>
+                    ) : (
+                      dashboardAiInsight || t('breedAiInsight')
+                    )}
                   </p>
                 </div>
               </div>
@@ -631,8 +690,12 @@ export const DashboardOverview: React.FC = () => {
                   <div className="text-xs font-semibold text-slate-900">
                     {t('aiInsightTitle')}
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal">
-                    {t('climateAiInsight')}
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal min-h-[30px]">
+                    {isInsightLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> {t('thinking')}</span>
+                    ) : (
+                      dashboardAiInsight || t('climateAiInsight')
+                    )}
                   </p>
                 </div>
               </div>
@@ -679,8 +742,12 @@ export const DashboardOverview: React.FC = () => {
                   <div className="text-xs font-semibold text-slate-900">
                     {t('aiInsightTitle')}
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal">
-                    {t('yieldCorrAiInsight')}
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed font-normal min-h-[30px]">
+                    {isInsightLoading ? (
+                      <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> {t('thinking')}</span>
+                    ) : (
+                      dashboardAiInsight || t('yieldCorrAiInsight')
+                    )}
                   </p>
                 </div>
               </div>
@@ -803,11 +870,11 @@ export const DashboardOverview: React.FC = () => {
               </div>
               <div className="text-xs text-slate-600 space-y-1.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <span>Cow 024 (Gir · Pen 2)</span>
+                  <span>Gauri (Gir · Pen 2)</span>
                   <span className="text-rose-600 font-medium">{t('statusSuspicious')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Cow 042 (Sahiwal · Pen 3)</span>
+                  <span>Kamdhenu (Sahiwal · Pen 3)</span>
                   <span className="text-rose-600 font-medium">{t('statusSuspicious')}</span>
                 </div>
               </div>

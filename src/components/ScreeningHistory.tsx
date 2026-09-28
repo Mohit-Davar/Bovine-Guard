@@ -82,7 +82,7 @@ export const ScreeningHistory: React.FC = () => {
   const milkMeasurements = [
     {
       id: 'm-024',
-      cowName: 'Cow 024',
+      cowName: 'Gauri',
       pen: 'Pen 2',
       breed: 'Gir',
       time: '06:42 AM',
@@ -95,7 +95,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-037',
-      cowName: 'Cow 037',
+      cowName: 'Nandini',
       pen: 'Pen 1',
       breed: 'HF Cross',
       time: '06:55 AM',
@@ -108,7 +108,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-042',
-      cowName: 'Cow 042',
+      cowName: 'Kamdhenu',
       pen: 'Pen 3',
       breed: 'HF Cross',
       time: '06:30 AM',
@@ -121,7 +121,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-058',
-      cowName: 'Cow 058',
+      cowName: 'Lakshmi',
       pen: 'Pen 3',
       breed: 'Rathi',
       time: '07:10 AM',
@@ -134,7 +134,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-071',
-      cowName: 'Cow 071',
+      cowName: 'Surabhi',
       pen: 'Pen 4',
       breed: 'Gir',
       time: '06:15 AM',
@@ -147,7 +147,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-001',
-      cowName: 'Cow 001',
+      cowName: 'Parvati',
       pen: 'Pen 1',
       breed: 'Gir',
       time: '06:10 AM',
@@ -160,7 +160,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-002',
-      cowName: 'Cow 002',
+      cowName: 'Ganga',
       pen: 'Pen 1',
       breed: 'Sahiwal',
       time: '06:14 AM',
@@ -173,7 +173,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'm-015',
-      cowName: 'Cow 015',
+      cowName: 'Annapurna',
       pen: 'Pen 2',
       breed: 'Tharparkar',
       time: '06:22 AM',
@@ -189,7 +189,7 @@ export const ScreeningHistory: React.FC = () => {
   const physicalMeasurements = [
     {
       id: 'p-024',
-      cowName: 'Cow 024',
+      cowName: 'Gauri',
       pen: 'Pen 2',
       breed: 'Gir',
       time: '07:05 AM',
@@ -202,7 +202,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'p-042',
-      cowName: 'Cow 042',
+      cowName: 'Kamdhenu',
       pen: 'Pen 3',
       breed: 'HF Cross',
       time: '07:12 AM',
@@ -215,7 +215,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'p-071',
-      cowName: 'Cow 071',
+      cowName: 'Surabhi',
       pen: 'Pen 4',
       breed: 'Gir',
       time: '06:50 AM',
@@ -228,7 +228,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'p-096',
-      cowName: 'Cow 096',
+      cowName: 'Mohini',
       pen: 'Pen 2',
       breed: 'Sahiwal',
       time: '07:20 AM',
@@ -241,7 +241,7 @@ export const ScreeningHistory: React.FC = () => {
     },
     {
       id: 'p-001',
-      cowName: 'Cow 001',
+      cowName: 'Parvati',
       pen: 'Pen 1',
       breed: 'Gir',
       time: '06:40 AM',
@@ -336,31 +336,28 @@ export const ScreeningHistory: React.FC = () => {
           <div className="inline-flex items-center p-1 bg-black/[0.04] rounded-xl gap-0.5">
             <button
               onClick={() => setMeasurementType('all')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                measurementType === 'all'
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${measurementType === 'all'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               All Types
             </button>
             <button
               onClick={() => setMeasurementType('milk')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                measurementType === 'milk'
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${measurementType === 'milk'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               Milk
             </button>
             <button
               onClick={() => setMeasurementType('physical')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                measurementType === 'physical'
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${measurementType === 'physical'
                   ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               Physical
             </button>
@@ -483,9 +480,8 @@ export const ScreeningHistory: React.FC = () => {
                   <div className="p-2 rounded-xl bg-black/[0.02] border border-black/[0.04]">
                     <div className="text-[10px] text-slate-500 font-medium">EC</div>
                     <div
-                      className={`text-sm font-semibold mt-0.5 ${
-                        record.ec >= 7.0 ? 'text-rose-600' : 'text-slate-900'
-                      }`}
+                      className={`text-sm font-semibold mt-0.5 ${record.ec >= 7.0 ? 'text-rose-600' : 'text-slate-900'
+                        }`}
                     >
                       {record.ec}
                     </div>

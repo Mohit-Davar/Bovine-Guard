@@ -21,7 +21,6 @@ const DashboardContent: React.FC = () => {
     appointmentCow,
     closeAppointmentModal,
     touchMode,
-    t,
   } = useHerd()
 
   return (
@@ -61,22 +60,6 @@ const DashboardContent: React.FC = () => {
           </motion.div>
         </AnimatePresence>
       </main>
-
-      {/* Apple-style Minimal Footer */}
-      <footer className="mt-12 border-t border-black/[0.06] py-6 bg-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800">GauSaathi</span>
-            <span className="text-slate-300">·</span>
-            <span className="text-slate-500">Indian Dairy Cow Health Monitoring</span>
-          </div>
-          <div className="text-slate-400 text-[11px] flex items-center gap-2">
-            <span>Google Calendar & Contacts Connected</span>
-            <span className="text-slate-300">·</span>
-            <span>Pen & Wearable Health Management</span>
-          </div>
-        </div>
-      </footer>
 
       {/* Global Modals & Overlays */}
       <AnimalProfileModal />

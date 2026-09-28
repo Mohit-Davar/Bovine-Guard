@@ -1,21 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 import { useHerd } from '../context/HerdContext'
-import { SupportedLanguage } from '../i18n/translations'
+import { getTranslation } from '../i18n/translations'
 import { ChatMessage } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Activity,
-  AlertTriangle,
   Bot,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
   Loader2,
   Send,
-  Sparkles,
-  Stethoscope,
-  User,
   X,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -24,17 +16,7 @@ export const Chatbot: React.FC = () => {
   const { animals, language, openAnimalProfile, openAppointmentModal, t } = useHerd()
 
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'msg-welcome',
-      sender: 'assistant',
-      timestamp: 'Just now',
-      text:
-        language === 'hi'
-          ? 'नमस्ते! मैं **गौसाथी AI** (GauSaathi AI) सहायक हूँ। आप मुझसे गायों के स्वास्थ्य, दूध की चालकता (EC), फार्म के वातावरण, या डॉक्टर से समय लेने के बारे में पूछ सकते हैं।'
-          : 'Namaste! I am **GauSaathi AI** assistant. Ask me about cow health, milk conductivity (EC), pen conditions, or booking a veterinary doctor.',
-    },
-  ])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputText, setInputText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
 
@@ -46,81 +28,100 @@ export const Chatbot: React.FC = () => {
     }
   }, [messages, isOpen])
 
+  useEffect(() => {
+    setMessages((current) => {
+      if (current.length > 1 || (current.length === 1 && current[0].id !== 'msg-welcome')) {
+        return current
+      }
+      return [
+        {
+          id: 'msg-welcome',
+          sender: 'assistant',
+          timestamp: new Date().toISOString(),
+          text: getTranslation('chatWelcome', language),
+        },
+      ]
+    })
+  }, [language])
+
   const suggestions = [
-    'Farm health overview',
-    'Why is Cow 024 flagged?',
-    'Book veterinary appointment',
-    'Pen 2 status',
+    t('suggestionOverview'),
+    t('suggestionCowAlert'),
+    t('suggestionVeterinary'),
+    t('suggestionPen'),
   ]
 
-  const handleSendMessage = (textToSend?: string) => {
-    const text = textToSend || inputText
-    if (!text.trim()) return
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend ?? inputText).trim()
+    if (!text || isTyping) return
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: 'user',
-      timestamp: 'Just now',
+      timestamp: new Date().toISOString(),
       text,
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    const history = messages.map((message) => ({
+      role: message.sender,
+      content: message.text,
+    }))
+    setMessages((previous) => [...previous, userMessage])
     if (!textToSend) setInputText('')
     setIsTyping(true)
 
-    // GauSaathi AI response generator tailored for Indian dairy farming
-    setTimeout(() => {
-      const q = text.toLowerCase()
-      let reply = ''
-
-      if (q.includes('overview') || q.includes('summary') || q.includes('total')) {
-        reply = `**GauSaathi Farm Overview:**
-• **128 Total Cows** across 4 pens (Pen 1, 2, 3, 4).
-• **116 Checked Today** (90.6% shift coverage).
-• **94 Healthy**, **18 At Risk**, **6 Suspicious**.
-• Farm THI is currently **78** with temperature **29.4°C** and humidity **68%**.`
-      } else if (q.includes('024') || q.includes('cow 024') || q.includes('flagged')) {
-        reply = `**Cow 024 (Pen 2 · Gir):**
-• **Status:** Suspicious (Action required)
-• **Milk EC:** 7.8 mS/cm (↑ 18% above normal)
-• **Milk pH:** 6.8
-• **Milk Yield:** 5.4 L (↓ Below normal)
-• **Physical Tracking:** Wearable active. Activity is reduced and lying time has increased to 14.1 hours.
-• **Recommended Action:** Milk separately from bulk tank and book a doctor visit.`
-      } else if (q.includes('037') || q.includes('cow 037')) {
-        reply = `**Cow 037 (Pen 1 · HF Cross):**
-• **Status:** At Risk
-• **Milk EC:** 6.4 mS/cm (mildly elevated)
-• **Wearable Status:** Pending start.
-• **Action:** Attach physical monitoring sensor and check during next shift.`
-      } else if (
-        q.includes('doctor') ||
-        q.includes('vet') ||
-        q.includes('appointment') ||
-        q.includes('calendar')
-      ) {
-        reply = `You can easily book an on-farm visit with verified veterinarians (e.g. Dr. Rajesh Verma, Dr. Anita Sharma) using Google Calendar. The appointment will automatically add to your calendar and send an email reminder with clinical notes to both you and the doctor.`
-      } else if (q.includes('pen') || q.includes('pens')) {
-        reply = `**Pen Status:**
-• **Pen 1:** 32 cows (2 suspicious, 5 at risk, 25 healthy)
-• **Pen 2:** 28 cows (1 suspicious, 3 at risk, 24 healthy)
-• **Pen 3:** 34 cows (2 suspicious, 4 at risk, 28 healthy)
-• **Pen 4:** 34 cows (1 suspicious, 6 at risk, 29 healthy)`
-      } else {
-        reply = `GauSaathi monitors your herd's milk conductivity (EC), pH, and physical resting metrics. For cows showing elevated readings (such as Cow 024 in Pen 2), prompt isolation of milk and consultation with a veterinary doctor is recommended.`
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          language,
+          history: history.slice(-12),
+          animals: animals.map((animal) => ({
+            name: animal.name,
+            tag: animal.tag,
+            breed: animal.breed,
+            pen: animal.assignedPen,
+            risk: animal.currentRisk,
+            riskScore: animal.riskScore,
+            ec: animal.ec,
+            ph: animal.ph,
+            milkTemp: animal.milkTemp,
+            dailyMilkYieldKg: animal.dailyMilkYieldKg,
+            wearableActivity: animal.wearable?.activityStatus ?? 'not monitored',
+          })),
+        }),
+      })
+      const result = (await response.json()) as { reply?: unknown; error?: unknown }
+      if (!response.ok || typeof result.reply !== 'string' || !result.reply.trim()) {
+        throw new Error(typeof result.error === 'string' ? result.error : 'Chat request failed')
       }
+      const reply = result.reply.trim()
 
-      setMessages((prev) => [
-        ...prev,
+      setMessages((previous) => [
+        ...previous,
         {
           id: `msg-reply-${Date.now()}`,
           sender: 'assistant',
-          timestamp: 'Just now',
+          timestamp: new Date().toISOString(),
           text: reply,
         },
       ])
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t('chatError')
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: `msg-error-${Date.now()}`,
+          sender: 'assistant',
+          timestamp: new Date().toISOString(),
+          text: errorMessage,
+        },
+      ])
+    } finally {
       setIsTyping(false)
-    }, 450)
+    }
   }
 
   return (
@@ -130,7 +131,7 @@ export const Chatbot: React.FC = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-12 h-12 rounded-full bg-[#1D1D1F] hover:bg-black text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center relative active:scale-95"
-          title="Ask GauSaathi AI"
+          title={t('askAdvisor')}
         >
           <Bot className="w-5 h-5 text-blue-400" />
           <span className="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
@@ -158,9 +159,7 @@ export const Chatbot: React.FC = () => {
                     <span>GauSaathi AI</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Indian Dairy Health Advisor
-                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">{t('chatSubtitle')}</div>
                 </div>
               </div>
               <button
@@ -179,11 +178,10 @@ export const Chatbot: React.FC = () => {
                   className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
-                      m.sender === 'user'
-                        ? 'bg-[#0071E3] text-white font-normal'
-                        : 'bg-white border border-black/[0.06] text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.02)]'
-                    }`}
+                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${m.sender === 'user'
+                      ? 'bg-[#0071E3] text-white font-normal'
+                      : 'bg-white border border-black/[0.06] text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.02)]'
+                      }`}
                   >
                     <ReactMarkdown>{m.text}</ReactMarkdown>
                   </div>
@@ -232,6 +230,7 @@ export const Chatbot: React.FC = () => {
               <button
                 type="submit"
                 disabled={!inputText.trim()}
+                aria-label={t('send')}
                 className="p-2 rounded-full bg-[#1D1D1F] hover:bg-black text-white transition-colors disabled:opacity-30"
               >
                 <Send className="w-3.5 h-3.5" />

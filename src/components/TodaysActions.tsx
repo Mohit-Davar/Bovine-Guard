@@ -81,7 +81,7 @@ export const TodaysActions: React.FC = () => {
     setMonitoringStartedIds((prev) => [...prev, cow.id])
     addToast({
       title: t('startMonitoring'),
-      message: `${cow.name || `Cow ${cow.tag}`} - ${t('wearableActive')}`,
+      message: `${cow.name || `${t('cowLabel')} ${cow.tag}`} - ${t('wearableActive')}`,
       type: 'success',
       animalId: cow.id,
     })
@@ -91,7 +91,7 @@ export const TodaysActions: React.FC = () => {
     setResolvedIds((prev) => [...prev, cow.id])
     addToast({
       title: t('markResolved'),
-      message: `${cow.name || `Cow ${cow.tag}`} ${t('markResolved').toLowerCase()}.`,
+      message: t('resolvedToast', { name: cow.name || `${t('cowLabel')} ${cow.tag}` }),
       type: 'info',
       animalId: cow.id,
     })
@@ -107,7 +107,7 @@ export const TodaysActions: React.FC = () => {
           </h1>
           <p className="text-xs text-slate-500 font-normal mt-1">
             {flaggedCows.length > 0
-              ? `${flaggedCows.length} ${t('tabAnimals').toLowerCase()} ${t('actionNeeded').toLowerCase()}`
+              ? t('actionCountLabel', { count: flaggedCows.length })
               : t('resolvedCount')}
           </p>
         </div>
@@ -155,14 +155,14 @@ export const TodaysActions: React.FC = () => {
             // Dynamic parameter formatting
             const ecState =
               cow.ec >= 7.0
-                ? 'High'
+                ? t('elevated')
                 : cow.ec >= 6.0
-                  ? 'Elevated'
+                  ? t('elevated')
                   : cow.ec >= 5.5
-                    ? 'Above normal'
-                    : 'Normal'
-            const phState = cow.ph > 6.7 ? 'Above normal' : 'Normal'
-            const milkTempState = cow.milkTemp > 38.8 ? 'Elevated' : 'Normal'
+                    ? t('aboveNormal')
+                    : t('normalValue')
+            const phState = cow.ph > 6.7 ? t('aboveNormal') : t('normalValue')
+            const milkTempState = cow.milkTemp > 38.8 ? t('elevated') : t('normalValue')
 
             return (
               <motion.div
@@ -171,11 +171,10 @@ export const TodaysActions: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className={`bg-white rounded-3xl border p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between transition-all duration-200 ${
-                  isSuspicious
-                    ? 'border-rose-200/90 hover:border-rose-300'
-                    : 'border-black/[0.06] hover:border-black/[0.12]'
-                }`}
+                className={`bg-white rounded-3xl border p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between transition-all duration-200 ${isSuspicious
+                  ? 'border-rose-200/90 hover:border-rose-300'
+                  : 'border-black/[0.06] hover:border-black/[0.12]'
+                  }`}
               >
                 <div>
                   {/* Cow Title, Pen, Breed, Status */}
@@ -183,7 +182,7 @@ export const TodaysActions: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg font-semibold text-slate-900 tracking-tight">
-                          {cow.name || `Cow ${cow.tag}`}
+                          {cow.name || `${t('cowLabel')} ${cow.tag}`}
                         </span>
                         <span className="text-xs font-normal text-slate-500">
                           {cow.assignedPen || 'Pen 1'}
@@ -195,14 +194,12 @@ export const TodaysActions: React.FC = () => {
                     </div>
 
                     <span
-                      className={`text-xs font-medium flex items-center gap-1.5 ${
-                        isSuspicious ? 'text-rose-600' : 'text-amber-700'
-                      }`}
+                      className={`text-xs font-medium flex items-center gap-1.5 ${isSuspicious ? 'text-rose-600' : 'text-amber-700'
+                        }`}
                     >
                       <span
-                        className={`w-2 h-2 rounded-full ${
-                          isSuspicious ? 'bg-rose-500' : 'bg-amber-500'
-                        }`}
+                        className={`w-2 h-2 rounded-full ${isSuspicious ? 'bg-rose-500' : 'bg-amber-500'
+                          }`}
                       />
                       <span>{statusLabel}</span>
                     </span>
@@ -214,19 +211,18 @@ export const TodaysActions: React.FC = () => {
                     <div className="p-4 rounded-2xl bg-[#FBFBFD] border border-black/[0.04]">
                       <div className="text-xs font-medium text-slate-800 mb-3 flex items-center justify-between">
                         <span>{t('milkChecks')}</span>
-                        <span className="text-slate-400 font-normal">Shift Check</span>
+                        <span className="text-slate-400 font-normal">{t('shiftCheck')}</span>
                       </div>
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500">{t('ecLabel')}:</span>
                           <span
-                            className={`font-semibold ${
-                              cow.ec >= 7.0
-                                ? 'text-rose-600'
-                                : cow.ec >= 6.0
-                                  ? 'text-amber-600'
-                                  : 'text-slate-800'
-                            }`}
+                            className={`font-semibold ${cow.ec >= 7.0
+                              ? 'text-rose-600'
+                              : cow.ec >= 6.0
+                                ? 'text-amber-600'
+                                : 'text-slate-800'
+                              }`}
                           >
                             {cow.ec} ({ecState})
                           </span>
@@ -247,7 +243,7 @@ export const TodaysActions: React.FC = () => {
                           <span className="text-slate-500">{t('yieldLabel')}:</span>
                           <span className="font-normal text-slate-800">
                             {cow.dailyMilkYieldKg} L (
-                            {cow.dailyMilkYieldKg < 6.5 ? '↓ Below normal' : 'Normal'})
+                            {cow.dailyMilkYieldKg < 6.5 ? `↓ ${t('belowNormal')}` : t('normalValue')})
                           </span>
                         </div>
                       </div>
@@ -259,11 +255,10 @@ export const TodaysActions: React.FC = () => {
                         <div className="text-xs font-medium text-slate-800 mb-3 flex items-center justify-between">
                           <span>{t('physicalChecks')}</span>
                           <span
-                            className={`text-xs font-normal ${
-                              hasActiveWearable
-                                ? 'text-emerald-700'
-                                : 'text-slate-500'
-                            }`}
+                            className={`text-xs font-normal ${hasActiveWearable
+                              ? 'text-emerald-700'
+                              : 'text-slate-500'
+                              }`}
                           >
                             {hasActiveWearable ? t('activeWearable') : t('pendingStart')}
                           </span>
@@ -274,34 +269,33 @@ export const TodaysActions: React.FC = () => {
                             <div className="flex items-center justify-between">
                               <span className="text-slate-500">{t('activityLabel')}:</span>
                               <span
-                                className={`font-medium ${
-                                  cow.wearable?.activityStatus === 'lethargic'
-                                    ? 'text-rose-600'
-                                    : 'text-slate-800'
-                                }`}
+                                className={`font-medium ${cow.wearable?.activityStatus === 'lethargic'
+                                  ? 'text-rose-600'
+                                  : 'text-slate-800'
+                                  }`}
                               >
                                 {cow.wearable?.activityStatus === 'lethargic'
-                                  ? 'Low (↓)'
+                                  ? `${t('low')} (↓)`
                                   : cow.wearable?.activityStatus === 'restless'
-                                    ? 'Restless'
-                                    : 'Normal'}
+                                    ? t('restless')
+                                    : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-slate-500">{t('movementLabel')}:</span>
                               <span className="font-normal text-slate-800">
-                                {isSuspicious ? 'Reduced' : 'Normal'}
+                                {isSuspicious ? t('reduced') : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-slate-500">{t('lyingLabel')}:</span>
                               <span className="font-normal text-slate-800">
-                                {isSuspicious ? 'Increased (↑)' : 'Normal'}
+                                {isSuspicious ? `${t('increased')} (↑)` : t('normalValue')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-slate-500">{t('standingLabel')}:</span>
-                              <span className="font-normal text-slate-800">Normal</span>
+                              <span className="font-normal text-slate-800">{t('normalValue')}</span>
                             </div>
                           </div>
                         ) : (

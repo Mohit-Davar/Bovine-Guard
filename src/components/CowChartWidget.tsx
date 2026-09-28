@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import { useHerd } from '../context/HerdContext'
 import { Animal } from '../types'
 import {
   Activity,
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export const CowChartWidget: React.FC<Props> = ({ animal }) => {
+  const { t } = useHerd()
   const [activeMetric, setActiveMetric] = useState<'conductivity' | 'yield' | 'activity' | 'temperature'>('conductivity')
 
   const isSuspicious = animal.currentRisk === 'suspected' || animal.currentRisk === 'critical' || animal.ec > 6.8
@@ -43,7 +45,7 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
   // 5-Day Trend Data tailored to cow's current measurements
   const trendData = [
     {
-      day: '4 days ago',
+      day: t('fourDaysAgo'),
       ec: 5.0,
       yieldL: 8.8,
       activity: 100,
@@ -52,7 +54,7 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       status: 'Healthy',
     },
     {
-      day: '3 days ago',
+      day: t('threeDaysAgo'),
       ec: 5.1,
       yieldL: 8.6,
       activity: 98,
@@ -61,7 +63,7 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       status: 'Healthy',
     },
     {
-      day: '2 days ago',
+      day: t('twoDaysAgo'),
       ec: isSuspicious ? 6.2 : isAtRisk ? 5.5 : 5.1,
       yieldL: isSuspicious ? 7.6 : isAtRisk ? 8.2 : 8.7,
       activity: isSuspicious ? 90 : isAtRisk ? 95 : 100,
@@ -70,7 +72,7 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       status: isSuspicious ? 'Watch' : 'Healthy',
     },
     {
-      day: 'Yesterday',
+      day: t('yesterday'),
       ec: isSuspicious ? 6.8 : isAtRisk ? 6.0 : 5.0,
       yieldL: isSuspicious ? 6.5 : isAtRisk ? 7.5 : 8.6,
       activity: isSuspicious ? 82 : isAtRisk ? 88 : 99,
@@ -79,7 +81,7 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       status: isSuspicious ? 'At Risk' : isAtRisk ? 'At Risk' : 'Healthy',
     },
     {
-      day: 'Today',
+      day: t('today'),
       ec: animal.ec,
       yieldL: animal.dailyMilkYieldKg,
       activity: isSuspicious ? 72 : isAtRisk ? 85 : 100,
@@ -91,7 +93,14 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
 
   // Observed calculations
   const ecDelta = Math.round(((animal.ec - 5.0) / 5.0) * 100)
-  const yieldDrop = Math.round(((8.5 - animal.dailyMilkYieldKg) / 8.5) * 100)
+  const chartInsight = isSuspicious
+    ? t('chartInsightSuspicious', {
+      name: animal.name || `${t('cowLabel')} ${animal.tag}`,
+      delta: ecDelta,
+    })
+    : isAtRisk
+      ? t('chartInsightRisk', { ec: animal.ec })
+      : t('chartInsightHealthy', { breed: animal.breed })
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-4">
@@ -99,10 +108,10 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
-            Historical Parameter Trends
+            {t('chartTrendsTitle')}
           </h3>
           <p className="text-xs text-slate-500 font-normal">
-            Multi-chart view of milk and physical sensor metrics over past 5 shifts
+            {t('chartTrendsSubtitle')}
           </p>
         </div>
 
@@ -110,43 +119,39 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
         <div className="inline-flex items-center p-1 bg-black/[0.04] rounded-xl gap-0.5">
           <button
             onClick={() => setActiveMetric('conductivity')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeMetric === 'conductivity'
-                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${activeMetric === 'conductivity'
+              ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
-            Conductivity (EC)
+            {t('conductivityMetric')}
           </button>
           <button
             onClick={() => setActiveMetric('yield')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeMetric === 'yield'
-                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${activeMetric === 'yield'
+              ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
-            Milk Yield
+            {t('yieldLabel')}
           </button>
           <button
             onClick={() => setActiveMetric('activity')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeMetric === 'activity'
-                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${activeMetric === 'activity'
+              ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
-            Activity & Rumination
+            {t('activityRuminationMetric')}
           </button>
           <button
             onClick={() => setActiveMetric('temperature')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeMetric === 'temperature'
-                ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${activeMetric === 'temperature'
+              ? 'bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.06)] font-semibold'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
-            Milk Temp
+            {t('milkTempMetric')}
           </button>
         </div>
       </div>
@@ -175,11 +180,11 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
                   fontSize: '12px',
                 }}
               />
-              <ReferenceLine y={5.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Baseline (5.5)', position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
+              <ReferenceLine y={5.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: `${t('normalBaseline')} (5.5)`, position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
               <Area
                 type="monotone"
                 dataKey="ec"
-                name="Conductivity (mS/cm)"
+                name={`${t('conductivityMetric')} (mS/cm)`}
                 stroke={isSuspicious ? '#F43F5E' : '#0071E3'}
                 strokeWidth={2.5}
                 fillOpacity={1}
@@ -201,8 +206,8 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
                   fontSize: '12px',
                 }}
               />
-              <ReferenceLine y={8.0} stroke="#86868B" strokeDasharray="4 4" label={{ value: 'Target Yield (8.0 L)', position: 'insideTopLeft', fill: '#86868B', fontSize: 10 }} />
-              <Bar dataKey="yieldL" name="Milk Yield (L)" fill="#10B981" radius={[6, 6, 0, 0]}>
+              <ReferenceLine y={8.0} stroke="#86868B" strokeDasharray="4 4" label={{ value: `${t('targetYield')} (8.0 L)`, position: 'insideTopLeft', fill: '#86868B', fontSize: 10 }} />
+              <Bar dataKey="yieldL" name={`${t('yieldLabel')} (L)`} fill="#10B981" radius={[6, 6, 0, 0]}>
                 {trendData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
@@ -215,8 +220,8 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
             <ComposedChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F3" />
               <XAxis dataKey="day" stroke="#86868B" fontSize={11} tickLine={false} />
-              <YAxis yAxisId="left" stroke="#86868B" fontSize={11} tickLine={false} domain={[50, 110]} label={{ value: 'Activity %', angle: -90, position: 'insideLeft', fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" stroke="#6366F1" fontSize={11} tickLine={false} domain={[250, 550]} label={{ value: 'Rumination (min)', angle: 90, position: 'insideRight', fontSize: 10 }} />
+              <YAxis yAxisId="left" stroke="#86868B" fontSize={11} tickLine={false} domain={[50, 110]} label={{ value: `${t('activityIndex')} %`, angle: -90, position: 'insideLeft', fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" stroke="#6366F1" fontSize={11} tickLine={false} domain={[250, 550]} label={{ value: t('ruminationMinutes'), angle: 90, position: 'insideRight', fontSize: 10 }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'rgba(29, 29, 31, 0.95)',
@@ -228,8 +233,8 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-              <Bar yAxisId="left" dataKey="activity" name="Physical Activity Index" fill="#0071E3" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="ruminationMin" name="Rumination Minutes" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 4 }} />
+              <Bar yAxisId="left" dataKey="activity" name={t('physicalActivityIndex')} fill="#0071E3" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="ruminationMin" name={t('ruminationMinutes')} stroke="#6366F1" strokeWidth={2.5} dot={{ r: 4 }} />
             </ComposedChart>
           ) : (
             <LineChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -246,8 +251,8 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
                   fontSize: '12px',
                 }}
               />
-              <ReferenceLine y={38.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Temp (38.5°C)', position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
-              <Line type="monotone" dataKey="milkTemp" name="Milk Temperature (°C)" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4 }} />
+              <ReferenceLine y={38.5} stroke="#10B981" strokeDasharray="4 4" label={{ value: `${t('normalValue')} ${t('tempLabel')} (38.5°C)`, position: 'insideTopLeft', fill: '#10B981', fontSize: 10 }} />
+              <Line type="monotone" dataKey="milkTemp" name={`${t('milkTemperature')} (°C)`} stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4 }} />
             </LineChart>
           )}
         </ResponsiveContainer>
@@ -257,13 +262,9 @@ export const CowChartWidget: React.FC<Props> = ({ animal }) => {
       <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-500/[0.04] via-indigo-500/[0.04] to-violet-500/[0.04] border border-indigo-500/15 flex items-start gap-2.5">
         <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
         <div className="text-xs">
-          <span className="font-semibold text-indigo-950">GauSaathi AI Observation: </span>
+          <span className="font-semibold text-indigo-950">{t('chartInsightTitle')} </span>
           <span className="text-slate-700 leading-relaxed">
-            {isSuspicious
-              ? `Cow ${animal.tag} experienced an acute conductivity divergence of +${ecDelta}% beginning 48 hours ago, concurrent with an activity decrease and rumination drop. Milk yield has decreased ${yieldDrop > 0 ? `${yieldDrop}%` : 'moderately'}. Recommend isolating milk and scheduling vet review.`
-              : isAtRisk
-                ? `Conductivity has nudged mildly above baseline (current ${animal.ec} mS/cm). Collar indicates steady rumination. Keep under active watch during the upcoming milking shift.`
-                : `Parameters are balanced. Conductivity (current ${animal.ec} mS/cm) and rumination remain within expected baseline curves for ${animal.breed} breed.`}
+            {chartInsight}
           </span>
         </div>
       </div>
