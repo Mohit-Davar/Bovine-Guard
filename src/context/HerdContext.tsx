@@ -114,8 +114,8 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [touchMode, setTouchMode] = useState<boolean>(false)
 
   // Core Data
-  const [animals, setAnimals] = useState<Animal[]>([])
-  const [screenings, setScreenings] = useState<ScreeningRecord[]>([])
+  const [animals, setAnimals] = useState<Animal[]>(INDIAN_HERD_ANIMALS)
+  const [screenings, setScreenings] = useState<ScreeningRecord[]>(INDIAN_SCREENING_RECORDS)
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [barnZones, setBarnZones] = useState<BarnZone[]>([])
   const [vetOutcomes, setVetOutcomes] = useState<VeterinaryOutcome[]>([])
@@ -204,24 +204,6 @@ export const HerdProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeFirestoreData = async () => {
       try {
-        // Load current snapshot
-        const [dbAnimals, dbScreenings, dbAlerts, dbOutcomes, dbBarns] = await Promise.all([
-          getAnimalsFromDb(),
-          getScreeningsFromDb(),
-          getAlertsFromDb(),
-          getVetOutcomesFromDb(),
-          getBarnsFromDb(),
-        ])
-
-        const initialHerd = dbAnimals.length > 0 ? dbAnimals : INDIAN_HERD_ANIMALS
-        const initialScreenings = dbScreenings.length > 0 ? dbScreenings : INDIAN_SCREENING_RECORDS
-
-        setAnimals(initialHerd)
-        setScreenings(initialScreenings)
-        setAlerts(dbAlerts)
-        setVetOutcomes(dbOutcomes)
-        setBarnZones(dbBarns)
-
         // Realtime Firestore listeners
         unsubscribeAnimals = onSnapshot(collection(db, COLLECTIONS.ANIMALS), (snap) => {
           if (!snap.empty) {
